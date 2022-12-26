@@ -15,6 +15,42 @@ type Person struct {
 	FavoriteColors []string `json:"favoriteColors"`
 }
 
+type Colors struct {
+	FavoriteColors []string `json:"favoriteColors"`
+}
+
+type Name struct {
+	Name string `json:"name"`
+}
+
+// initialize this at the beginning
+var (
+	currentLevel  = 1
+	question1Data = []Person{
+		{ID: "1", Name: "Alice", FavoriteColors: []string{"green", "yellow"}},
+		{ID: "2", Name: "Bob", FavoriteColors: []string{"green", "purple", "red"}},
+		{ID: "3", Name: "Sue", FavoriteColors: []string{"red", "blue"}},
+	}
+	question1Answer = Person{ID: "1", Name: "Alice", FavoriteColors: []string{"green", "yellow"}}
+	question2Data   = []Person{
+		{ID: "1", Name: "Rachel", FavoriteColors: []string{"blue"}},
+		{ID: "2", Name: "Thomas", FavoriteColors: []string{"red", "orange"}},
+		{ID: "3", Name: "Sarah", FavoriteColors: []string{"blue", "green"}},
+		{ID: "4", Name: "Max", FavoriteColors: []string{"yellow", "black"}},
+		{ID: "5", Name: "Rudi", FavoriteColors: []string{"red", "blue", "white"}},
+	}
+	question2Answer = Colors{
+		FavoriteColors: []string{"blue", "red", "orange", "green", "yellow", "black", "white"},
+	}
+	question3Data = []Person{
+		{ID: "1", Name: "Joe", FavoriteColors: []string{"blue", "black"}},
+		{ID: "2", Name: "Alex", FavoriteColors: []string{"pink", "purple"}},
+		{ID: "3", Name: "Jessie", FavoriteColors: []string{"red"}},
+		{ID: "4", Name: "Phil", FavoriteColors: []string{"orange"}},
+	}
+	question3Answer = Name{Name: "Jessie"}
+)
+
 func main() {
 	router := gin.Default()
 
@@ -61,26 +97,61 @@ var upgrader = websocket.Upgrader{
 }
 
 func getQuestion(c *gin.Context) {
-	people := []Person{
-		{ID: "1", Name: "Alice", FavoriteColors: []string{"green", "yellow"}},
-		{ID: "2", Name: "Bob", FavoriteColors: []string{"green", "purple", "red"}},
-		{ID: "3", Name: "Sue", FavoriteColors: []string{"red", "blue"}},
+	log.Println("current level here is: ", currentLevel)
+
+	switch currentLevel {
+	case 1:
+		c.IndentedJSON(http.StatusOK, question1Data)
+	case 2:
+		c.IndentedJSON(http.StatusOK, question2Data)
+	case 3:
+		c.IndentedJSON(http.StatusOK, question3Data)
+	default:
+		c.IndentedJSON(http.StatusOK, "out of questions!")
 	}
-	c.IndentedJSON(http.StatusOK, people)
 }
 
 func getAnswer(c *gin.Context) {
-	var actualAnswer Person
+	switch currentLevel {
+	case 1:
+		var actualAnswer Person
 
-	expectedAnswer := Person{ID: "1", Name: "Alice", FavoriteColors: []string{"green", "yellow"}}
+		if err := c.BindJSON(&actualAnswer); err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
 
-	if err := c.BindJSON(&actualAnswer); err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-	}
+		if reflect.DeepEqual(actualAnswer, question1Answer) {
+			log.Println("current level is: ", currentLevel)
 
-	if reflect.DeepEqual(actualAnswer, expectedAnswer) {
-		log.Println("you got the right answer!")
-	} else {
-		log.Println("nope, try again!")
+			log.Println("you got the right answer!")
+
+			currentLevel = currentLevel + 1
+		} else {
+			log.Println("nope, try again!")
+		}
+	case 2:
+		var actualAnswer Colors
+		if err := c.BindJSON(&actualAnswer); err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
+
+		if reflect.DeepEqual(actualAnswer, question2Answer) {
+			log.Print("you got the right answer!")
+
+			currentLevel = currentLevel + 1
+		} else {
+			log.Println("nope, try again")
+		}
+	case 3:
+		var actualAnswer Name
+		if err := c.BindJSON(&actualAnswer); err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+		}
+
+		if actualAnswer == question3Answer {
+			log.Println("you got the right answer")
+		} else {
+			log.Println("nope, try again")
+		}
 	}
 }
