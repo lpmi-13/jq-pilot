@@ -1,12 +1,19 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
 	"log"
 	"net/http"
 	"reflect"
+	"sort"
+	"time"
 
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
 
 type Person struct {
@@ -23,9 +30,28 @@ type Name struct {
 	Name string `json:"name"`
 }
 
+type Question1 struct {
+	Question []Person `json:"question"`
+	Answer   Person   `json:"answer"`
+}
+
+type Question2 struct {
+	Question []Person `json:"question"`
+	Answer   Colors   `json:"answer"`
+}
+
+type Question3 struct {
+	Question []Person `json:"question"`
+	Answer   Name     `json:"answer"`
+}
+
 // initialize this at the beginning
 var (
 	currentLevel  = 1
+	level1        = 1
+	level2        = 2
+	level3        = 3
+	delay         = 500
 	question1Data = []Person{
 		{ID: "1", Name: "Alice", FavoriteColors: []string{"green", "yellow"}},
 		{ID: "2", Name: "Bob", FavoriteColors: []string{"green", "purple", "red"}},
@@ -52,10 +78,30 @@ var (
 )
 
 func main() {
+	// using standard library "flag" package
+	flag.String("MODE", "dev", "whether we're running in dev or production mode")
+
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.Parse()
+	viper.BindPFlags(pflag.CommandLine)
+
+	MODE := viper.GetString("MODE") // retrieve value from viper
+
+	// don't bother overriding the mode when developing locally
+	viper.SetDefault("PORT", "8000")
+
 	router := gin.Default()
 
+	// Serve static files to frontend if server is started in production environment
+	if MODE == "prod" {
+		gin.SetMode(gin.ReleaseMode)
+		router.Use(static.Serve("/", static.LocalFile("./build", true)))
+	}
+
+	router.SetTrustedProxies(nil)
+
 	// the websocket stuff
-	router.GET("/", func(c *gin.Context) {
+	router.GET("/ws", func(c *gin.Context) {
 		ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
 			log.Println(err)
@@ -64,7 +110,6 @@ func main() {
 		}
 		defer ws.Close()
 		for {
-			log.Println("in a loop!")
 			mt, message, err := ws.ReadMessage()
 			if err != nil {
 				log.Println(err)
@@ -75,18 +120,58 @@ func main() {
 			if string(message) == "ping" {
 				response = []byte("pong")
 			}
-			err = ws.WriteMessage(mt, response)
-			if err != nil {
-				log.Println(err)
+			if string(message) == "update" {
+				switch currentLevel {
+				case level1:
+					mixedResponse := Question1{
+						Question: question1Data,
+						Answer:   question1Answer,
+					}
+					response, err = json.Marshal(mixedResponse)
+					if err != nil {
+						log.Println("could not marshall json for level:", currentLevel)
+					}
+				case level2:
+					mixedResponse := Question2{
+						Question: question2Data,
+						Answer:   question2Answer,
+					}
+					response, err = json.Marshal(mixedResponse)
+					if err != nil {
+						log.Println("could not marshall json for level:", currentLevel)
+					}
+				case level3:
+					mixedResponse := Question3{
+						Question: question3Data,
+						Answer:   question3Answer,
+					}
+					response, err = json.Marshal(mixedResponse)
+					if err != nil {
+						log.Println("could not marshall json for level:", currentLevel)
+					}
+				default:
+					response = []byte("no level set")
+				}
+				err = ws.WriteMessage(mt, response)
+				if err != nil {
+					log.Println(err)
 
-				break
+					break
+				}
 			}
+
+			time.Sleep(time.Duration(delay) * time.Millisecond)
 		}
 	})
 
 	router.GET("/question", getQuestion)
 	router.POST("/answer", getAnswer)
-	router.Run("localhost:8000")
+
+	// for no matching routes
+	router.NoRoute(func(ctx *gin.Context) { ctx.JSON(http.StatusNotFound, gin.H{}) })
+
+	port := viper.GetString("PORT")
+	router.Run(":" + port)
 }
 
 var upgrader = websocket.Upgrader{
@@ -97,14 +182,12 @@ var upgrader = websocket.Upgrader{
 }
 
 func getQuestion(c *gin.Context) {
-	log.Println("current level here is: ", currentLevel)
-
 	switch currentLevel {
-	case 1:
+	case level1:
 		c.IndentedJSON(http.StatusOK, question1Data)
-	case 2:
+	case level2:
 		c.IndentedJSON(http.StatusOK, question2Data)
-	case 3:
+	case level3:
 		c.IndentedJSON(http.StatusOK, question3Data)
 	default:
 		c.IndentedJSON(http.StatusOK, "out of questions!")
@@ -113,7 +196,7 @@ func getQuestion(c *gin.Context) {
 
 func getAnswer(c *gin.Context) {
 	switch currentLevel {
-	case 1:
+	case level1:
 		var actualAnswer Person
 
 		if err := c.BindJSON(&actualAnswer); err != nil {
@@ -121,28 +204,39 @@ func getAnswer(c *gin.Context) {
 		}
 
 		if reflect.DeepEqual(actualAnswer, question1Answer) {
-			log.Println("current level is: ", currentLevel)
-
 			log.Println("you got the right answer!")
 
 			currentLevel = currentLevel + 1
 		} else {
-			log.Println("nope, try again!")
+			if viper.GetString("MODE") == "dev" {
+				log.Println("got:", actualAnswer)
+				log.Println("wanted:", question1Answer)
+			} else {
+				log.Println("wrong answer, please try again")
+			}
 		}
-	case 2:
+	case level2:
 		var actualAnswer Colors
 		if err := c.BindJSON(&actualAnswer); err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
 		}
+
+		sort.Strings(actualAnswer.FavoriteColors)
+		sort.Strings(question2Answer.FavoriteColors)
 
 		if reflect.DeepEqual(actualAnswer, question2Answer) {
 			log.Print("you got the right answer!")
 
 			currentLevel = currentLevel + 1
 		} else {
-			log.Println("nope, try again")
+			if viper.GetString("MODE") == "dev" {
+				log.Println("got:", actualAnswer)
+				log.Println("wanted:", question2Answer)
+			} else {
+				log.Println("wrong answer, please try again")
+			}
 		}
-	case 3:
+	case level3:
 		var actualAnswer Name
 		if err := c.BindJSON(&actualAnswer); err != nil {
 			c.AbortWithStatus(http.StatusBadRequest)
@@ -151,7 +245,12 @@ func getAnswer(c *gin.Context) {
 		if actualAnswer == question3Answer {
 			log.Println("you got the right answer")
 		} else {
-			log.Println("nope, try again")
+			if viper.GetString("MODE") == "dev" {
+				log.Println("got:", actualAnswer)
+				log.Println("wanted:", question3Answer)
+			} else {
+				log.Println("wrong answer, please try again")
+			}
 		}
 	}
 }

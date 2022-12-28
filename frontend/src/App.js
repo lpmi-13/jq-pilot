@@ -1,44 +1,55 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useState } from "react";
 import "./App.css";
 
+function isOpen(ws) {
+    return ws.readyState === ws.OPEN;
+}
+
 function App() {
-    const ws = new WebSocket("ws://localhost:8000/");
+    const [wsQuestion, setWsQuestion] = useState(null);
+    const [wsAnswer, setWsAnswer] = useState(null);
 
-    ws.onopen = () => ws.send("ping");
+    const ws = new WebSocket("ws://localhost:8000/ws");
 
-    // setInterval(() => ws.send("ping"), 1000);
+    setInterval(() => {
+        if (!isOpen(ws)) {
+            return;
+        }
+        ws.send("update");
+    }, 1000);
 
-    const [question, setQuestion] = useState([]);
-
-    useEffect(() => {
-        fetch("/question")
-            .then((response) => response.json())
-            .then((data) => setQuestion(data));
-    }, []);
+    ws.onmessage = ({ data }) => {
+        const { question, answer } = JSON.parse(data);
+        setWsQuestion(question);
+        setWsAnswer(answer);
+    };
 
     return (
         <Fragment>
-            <div className="App">
-                <h2>here's the question!</h2>
-            </div>
-            <div>
-                <h3>
-                    {question.map(({ id, name, favoriteColors }) => (
-                        <div key={id}>
-                            <h3>Person</h3>
-                            <div>ID: {id}</div>
-                            <div>Name: {name}</div>
-                            <div>Fave colors {favoriteColors.join()}</div>
+            {wsQuestion ? (
+                <Fragment>
+                    <div className="App">
+                        <h2>here's the question!</h2>
+                    </div>
+                    <div className="flexblock">
+                        <div className="codeblock">
+                            <pre>{JSON.stringify(wsQuestion, null, 2)}</pre>
                         </div>
-                    ))}
-                </h3>
-            </div>
-            <div>
-                <h2>
-                    Try to transform it into just the first element via jq and
-                    send it back to the server at localhost:8000/answer
-                </h2>
-            </div>
+                        <div className="arrow">{`=>`}</div>
+                        <div className="codeblock">
+                            <pre>{JSON.stringify(wsAnswer, null, 2)}</pre>
+                        </div>
+                    </div>
+                    <div className="instructions">
+                        Try to transform the structure from{" "}
+                        <code>localhost:8000/question</code>
+                        into the filtered data and send it to{" "}
+                        <code>localhost:8000/answer</code>
+                    </div>
+                </Fragment>
+            ) : (
+                <h3 className="loading">LOADING...</h3>
+            )}
         </Fragment>
     );
 }
