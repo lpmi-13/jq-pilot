@@ -16,6 +16,14 @@ You'll see a prompt in the UI at `localhost:8000`, and if you hit `localhost:800
 
 You need to POST the data in the required format to `localhost:8000/answer`, and if you're right, you'll get a success message.
 
+## Running in Gitpod
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/lpmi-13/jq-pilot)
+
+Running this in gitpod removes the need to even have docker installed. Give it a whirl!
+
+Once the container is buit and running, the UI window should open up and you can start the `jq` practice sesh!
+
 ## Iterations
 
 1. First MVP is just three hardcoded json problems that can be worked through in sequence.
