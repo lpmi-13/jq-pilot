@@ -9,7 +9,7 @@ function App() {
     const [wsQuestion, setWsQuestion] = useState(null);
     const [wsAnswer, setWsAnswer] = useState(null);
 
-    const ws = new WebSocket("ws://localhost:8000/ws");
+    const ws = new WebSocket(`${process.env.REACT_APP_ENV === "production" ? "wss" : "ws"}://localhost:8000/ws`);
 
     setInterval(() => {
         if (!isOpen(ws)) {

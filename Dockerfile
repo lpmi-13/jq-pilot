@@ -22,7 +22,7 @@ RUN npm install
 COPY ./frontend/public /app/public
 COPY ./frontend/src /app/src
 
-RUN npm run build
+RUN REACT_APP_ENV=production npm run build
 
 COPY --from=builder /app/jq-pilot /app/jq-pilot
 
