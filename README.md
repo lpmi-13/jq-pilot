@@ -7,6 +7,7 @@ Inspired by the `jq` wizardry of csibar and thomas-franklin, I decided I needed 
 To start this up and try some exercises, just run
 
 ```
+npm i --prefix frontend
 npm start --prefix frontend
 ```
 
