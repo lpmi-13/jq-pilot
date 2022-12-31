@@ -46,6 +46,7 @@ type Question3 struct {
 }
 
 // initialize this at the beginning
+// we'll make it dynamic later
 var (
 	currentLevel  = 1
 	level1        = 1
