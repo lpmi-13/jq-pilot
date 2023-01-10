@@ -1,7 +1,7 @@
 tasks:
     - name: build and run docker container and generate TLS certs
       init: docker build -t jq-pilot .
-      before: sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx/ssl/nginx-selfsigned.key -out ./nginx/ssl/nginx-selfsigned.crt -subj "/C=PE/ST=Lima/L=Lima/O=Acme Inc. /OU=IT Department/CN=acme.com" && sudo openssl dhparam -out ./nginx/ssl/dhparam.pem 4096
+      before: sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx/ssl/nginx-selfsigned.key -out ./nginx/ssl/nginx-selfsigned.crt -subj "/C=PE/ST=Lima/L=Lima/O=Acme Inc. /OU=IT Department/CN=acme.com"
       command: docker-compose up --build
 
 ports:

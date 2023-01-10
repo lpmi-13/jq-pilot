@@ -25,7 +25,7 @@ services:
             # set up to generate them on startup
             - ./nginx/ssl/nginx-selfsigned.crt:/etc/ssl/certs/nginx-selfsigned.crt
             - ./nginx/ssl/nginx-selfsigned.key:/etc/ssl/private/nginx-selfsigned.key
-            - ./nginx/ssl/dhparam.pem:/etc/nginx/dhparam.pem
+            # - ./nginx/ssl/dhparam.pem:/etc/nginx/dhparam.pem
         restart: unless-stopped
 
 networks:
