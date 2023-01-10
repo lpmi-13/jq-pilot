@@ -1,7 +1,7 @@
 tasks:
     - name: build and run docker container and generate TLS certs
       before: docker build -t jq-pilot-backend .
-      init: sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx/ssl/nginx-selfsigned.key -out ./nginx/ssl/nginx-selfsigned.crt -subj "/C=PE/ST=Lima/L=Lima/O=Acme Inc. /OU=IT Department/CN=acme.com" && sudo chown -R gitpod:gitpod nginx/ssl
+      init: sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./nginx/ssl/nginx-selfsigned.key -out ./nginx/ssl/nginx-selfsigned.crt -subj "/C=PE/ST=Lima/L=Lima/O=Acme Inc. /OU=IT Department/CN=localhost" && sudo chown -R gitpod:gitpod nginx/ssl
       command: docker-compose up
 
 ports:
