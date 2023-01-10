@@ -24,8 +24,8 @@ services:
             - ./nginx/snippets:/etc/nginx/snippets
             # generate all the below yourself if running this locally, gitpod is already
             # set up to generate them on startup
-            - ./nginx/ssl/certs/nginx-selfsigned.crt:/etc/ssl/certs/nginx-selfsigned.crt
-            - ./nginx/ssl/private/nginx-selfsigned.key:/etc/ssl/private/nginx-selfsigned.key
+            - ./nginx/ssl/nginx-selfsigned.crt:/etc/ssl/certs/nginx-selfsigned.crt
+            - ./nginx/ssl/nginx-selfsigned.key:/etc/ssl/private/nginx-selfsigned.key
             - ./nginx/ssl/dhparam.pem:/etc/nginx/dhparam.pem
         restart: unless-stopped
 
