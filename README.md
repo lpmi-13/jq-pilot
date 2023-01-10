@@ -19,6 +19,8 @@ You need to POST the data in the required format to `localhost:8000/answer`, and
 
 ## Running in Gitpod
 
+> Note: getting the websocket connection requires having some TLS certs, and I'm working on that at the moment. If you just run this locally, it won't be an issue
+
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/lpmi-13/jq-pilot)
 
 Running this in gitpod removes the need to even have docker installed. Give it a whirl!
