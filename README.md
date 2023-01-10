@@ -1,6 +1,6 @@
 # JQ Pilot
 
-Inspired by the `jq` wizardry of csibar and thomas-franklin, I decided I needed a micromaterial to up my jq game, so I made this to generate learning exercises for myself.
+Inspired by the `jq` wizardry of @csibar and @thomas-franklin, I decided I needed a micromaterial to up my jq game, so I made this to generate learning exercises for myself.
 
 ## Local runs
 
@@ -13,19 +13,11 @@ npm start --prefix frontend
 
 and you should be off to the races.
 
+The recommend way to interact with this is to use `curl` in a terminal, but feel free to interact with the endpoint via the tool of your choice!
+
 You'll see a prompt in the UI at `localhost:8000`, and if you hit `localhost:8000/question`, you'll get the source json back for the first problem.
 
 You need to POST the data in the required format to `localhost:8000/answer`, and if you're right, you'll get a success message.
-
-## Running in Gitpod
-
-> Note: getting the websocket connection requires having some TLS certs, and I'm working on that at the moment. If you just run this locally, it won't be an issue
-
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/lpmi-13/jq-pilot)
-
-Running this in gitpod removes the need to even have docker installed. Give it a whirl!
-
-Once the container is buit and running, the UI window should open up and you can start the `jq` practice sesh!
 
 ## Iterations
 
