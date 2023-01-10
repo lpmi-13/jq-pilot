@@ -3,8 +3,9 @@ version: "3.7"
 services:
     backend:
         container_name: backend
-        build:
-            context: .
+        # this is the name of the built image in gitpod, so if running this locally,
+        # be sure to build it with the same name
+        image: jq-pilot-backend:latest
         networks:
             - jq-pilot
         ports:
