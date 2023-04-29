@@ -44,8 +44,8 @@ type JsonToIntArrayQuestion struct {
 }
 
 type JsonToStringArrayQuestion struct {
-	Question map[string][]util.FakePurchase `json:"question"`
-	Answer   []string                       `json:"answer"`
+	Question map[string][]interface{} `json:"question"`
+	Answer   []string                 `json:"answer"`
 }
 
 const (
@@ -142,7 +142,6 @@ func main() {
 
 	// the websocket stuff
 	router.GET("/ws", func(c *gin.Context) {
-		log.Println("received a request to the /ws endpoint")
 		ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
 			log.Println(err)
