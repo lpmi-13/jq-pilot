@@ -1,35 +1,183 @@
 # JQ Pilot
 
-Inspired by the `jq` wizardry of csibar and thomas-franklin, I decided I needed a micromaterial to up my jq game, so I made this to generate learning exercises for myself.
+Inspired by the `jq` wizardry of @csibar and @thomas-franklin, I decided I needed a micromaterial to up my jq game, so I made this to generate learning exercises for myself.
 
 ## Local runs
 
 To start this up and try some exercises, just run
 
 ```
+npm i --prefix frontend
 npm start --prefix frontend
 ```
 
 and you should be off to the races.
 
+The recommend way to interact with this is to use `curl` in a terminal, but feel free to interact with the endpoint via the tool of your choice!
+
 You'll see a prompt in the UI at `localhost:8000`, and if you hit `localhost:8000/question`, you'll get the source json back for the first problem.
 
 You need to POST the data in the required format to `localhost:8000/answer`, and if you're right, you'll get a success message.
 
-## Running in Gitpod
+Helpful tip: if you want to pipe something into curl, you can do the following:
 
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/lpmi-13/jq-pilot)
+```
+$ curl localhost:8000/question | jq DO_STUFF_HERE | curl -X POST -d @- localhost:8000/answer
+```
 
-Running this in gitpod removes the need to even have docker installed. Give it a whirl!
+## Development
 
-Once the container is buit and running, the UI window should open up and you can start the `jq` practice sesh!
+If you just wanna hack on the gin webserver, you can run go with `nodemon` to get live reloading on code changes, which is hashtag delicious!
+
+> nodemon --exec go run main.go --signal SIGTERM
+
+## Things we want to practice (taken from https://cameronnokes.com/blog/jq-cheatsheet/)
+
+-   get a named property
+
+```
+echo '{"id": 1, "name": "Cam"}' | jq '.id'``
+# 1
+```
+
+or
+
+```
+echo '{"nested": {"a": {"b": 42}}}' | jq '.nested.a.b'
+# 42
+```
+
+-   get an array element's properties
+
+```
+echo '[{"id": 1, "name": "Mario"}, {"id": 2, "name": "Luigi"}]' | jq '.[1].name'
+# Luigi
+```
+
+-   select specific key/value pair
+
+```
+echo '{"id": 123, "name": "Cam", "location": "Earth"} | jq '{"location"}'
+# {"location": "Earth"}
+```
+
+-   filter out specific key
+
+```
+echo '{"id": 123, "name": "Adam", "location": "Mars"} | jq 'del(.id)'
+# {"name": "Adam", "location": "Mars"}
+
+
+-   get an array element by index
+
+```
+
+echo '[0, 1, 1, 2, 3, 5, 8]' | jq '.[3]'
+
+# 2
+
+```
+
+-   slice an array
+
+```
+
+echo '["a", "b", "c", "d"]' | jq '.[1:3]'
+
+# ["b", "c"]
+
+```
+
+-   creating a new object
+
+```
+
+echo '{ "a": 1, "b": 2 }' | jq '{ a: .b, b: .a }'
+
+# { "a": 2, "b": 1 }
+
+```
+
+-   get an objects keys as an array
+
+```
+
+echo '{ "a": 1, "b": 2 }' | jq 'keys'
+
+# [a, b]
+
+```
+
+-   get the length of an array
+
+```
+
+echo '[0, 1, 1, 2, 3, 5, 8]' | jq 'length'
+
+# 7
+
+```
+
+-   get the number of keys
+
+```
+
+echo '{"a": 1, "b": 2}' | jq 'length'
+
+# 2
+
+```
+
+-   condense a nested array into a flat array
+
+```
+
+echo '[1, 2, [3, 4]]' | jq 'flatten'
+
+# [1, 2, 3, 4]
+
+```
+
+-   get unique values in an array
+
+```
+
+echo '[1, 2, 2, 3]' | jq 'unique'
+
+# [1, 2, 3]
+
+```
+
+## Different types of problems
+
+This is for simple named property selection.
+
+-   People
+    "age": float64(34),
+    "id": float64(12345),
+    "name": PickOneName(),
+    "location": PickOneLocation(),
+    "favoriteColors": favoriteColorsInterface,
+    "activities": activitiesInterface,
+
+We also want some choices that involve purchases
+
+-   Purchases
+    "purchaseId": float(1234),
+    "price": float(23.34),
+    "currency": string,
+    "
 
 ## Iterations
 
 1. First MVP is just three hardcoded json problems that can be worked through in sequence.
 
+> this is done.
+
 2. Second form will be dynamic problems where you can continuously fire GET requests at the question endpoint, and get a different problem each time you correctly solve it. If you just fire requests at the GET endpoint without sending the required answer, you'll get the same prompt.
 
-It could be this is achieved by some dynamic route handling gin magic, but it also could be that we run this in a compose stack that seeds the question on container startup and a correct POST triggers the container to kill itself by terminating the gin process.
 
-I have no idea where we're going to end up putting the complexity, but it'll definitely be somewhere! :laughing:
+> this is also done.
+
+3. Third step is to start adding different types of activities to cover all the common use cases for JQ
+```
