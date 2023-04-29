@@ -9,14 +9,23 @@ function App() {
     const [wsQuestion, setWsQuestion] = useState(null);
     const [wsAnswer, setWsAnswer] = useState(null);
 
-    const ws = new WebSocket(`${process.env.REACT_APP_ENV === "production" ? "wss" : "ws"}://localhost:8000/ws`);
+    const DOMAIN =
+        process.env.REACT_APP_ENV === "production"
+            ? "jq-pilot.up.railway.app"
+            : "localhost:8000";
+
+    const ws = new WebSocket(
+        `${
+            process.env.REACT_APP_ENV === "production" ? "wss" : "ws"
+        }://${DOMAIN}/ws`
+    );
 
     setInterval(() => {
         if (!isOpen(ws)) {
             return;
         }
         ws.send("update");
-    }, 1000);
+    }, 2000);
 
     ws.onmessage = ({ data }) => {
         const { question, answer } = JSON.parse(data);
@@ -37,7 +46,15 @@ function App() {
                         </div>
                         <div className="arrow">{`=>`}</div>
                         <div className="codeblock">
-                            <pre>{JSON.stringify(wsAnswer, null, 2)}</pre>
+                            <pre>
+                                {/* we need something smarter to determine if
+                                we should ask for the user to pass a quoted string
+                                or just the raw value, but this will do for now */}
+                                {(typeof wsAnswer === "string") |
+                                (typeof wsAnswer === "number")
+                                    ? wsAnswer
+                                    : JSON.stringify(wsAnswer, null, 2)}
+                            </pre>
                         </div>
                     </div>
                     <div className="instructions">

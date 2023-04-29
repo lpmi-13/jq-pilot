@@ -8,6 +8,8 @@ COPY go.sum /app
 RUN go mod download
 
 COPY main.go /app
+COPY util /app/util
+COPY transforms /app/transforms
 
 RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /app/jq-pilot
 
