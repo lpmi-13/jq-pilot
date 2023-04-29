@@ -44,8 +44,8 @@ type JsonToIntArrayQuestion struct {
 }
 
 type JsonToStringArrayQuestion struct {
-	Question map[string][]interface{} `json:"question"`
-	Answer   []string                 `json:"answer"`
+	Question map[string][]util.FakePurchase `json:"question"`
+	Answer   []string                       `json:"answer"`
 }
 
 const (
