@@ -33,6 +33,11 @@ function App() {
         setWsAnswer(answer);
     };
 
+    const currentDomain =
+        process.env.REACT_APP_ENV === "production"
+            ? window.location.origin
+            : "localhost:8000";
+
     return (
         <Fragment>
             {wsQuestion ? (
@@ -59,9 +64,9 @@ function App() {
                     </div>
                     <div className="instructions">
                         Try to transform the structure from{" "}
-                        <code>localhost:8000/question</code>
+                        <code>{currentDomain}/question</code>
                         into the filtered data and send it to{" "}
-                        <code>localhost:8000/answer</code>
+                        <code>{currentDomain}/answer</code>
                     </div>
                 </Fragment>
             ) : (
