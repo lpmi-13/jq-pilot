@@ -9,15 +9,15 @@ function App() {
     const [wsQuestion, setWsQuestion] = useState(null);
     const [wsAnswer, setWsAnswer] = useState(null);
 
-    const DOMAIN =
+    const currentDomain =
         process.env.REACT_APP_ENV === "production"
-            ? "jq-pilot.up.railway.app"
+            ? window.location.origin
             : "localhost:8000";
 
     const ws = new WebSocket(
         `${
             process.env.REACT_APP_ENV === "production" ? "wss" : "ws"
-        }://${DOMAIN}/ws`
+        }://${currentDomain}/ws`
     );
 
     setInterval(() => {
@@ -32,11 +32,6 @@ function App() {
         setWsQuestion(question);
         setWsAnswer(answer);
     };
-
-    const currentDomain =
-        process.env.REACT_APP_ENV === "production"
-            ? window.location.origin
-            : "localhost:8000";
 
     return (
         <Fragment>
