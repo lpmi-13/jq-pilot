@@ -9,16 +9,21 @@ function App() {
     const [wsQuestion, setWsQuestion] = useState(null);
     const [wsAnswer, setWsAnswer] = useState(null);
 
-    const currentDomain =
+    const currentHost =
         process.env.REACT_APP_ENV === "production"
-            ? window.location.origin
+            ? window.location.host
             : "localhost:8000";
 
     const ws = new WebSocket(
         `${
             process.env.REACT_APP_ENV === "production" ? "wss" : "ws"
-        }://${currentDomain}/ws`
+        }://${currentHost}/ws`
     );
+
+    const currentDomain =
+        process.env.REACT_APP_ENV === "production"
+            ? window.location.origin
+            : "localhost:8000";
 
     setInterval(() => {
         if (!isOpen(ws)) {
