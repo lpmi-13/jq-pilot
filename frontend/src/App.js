@@ -1,29 +1,29 @@
 import { Fragment, useState } from "react";
 import "./App.css";
 
-function isOpen(ws) {
+const isOpen = (ws) => {
     return ws.readyState === ws.OPEN;
-}
+};
+
+const currentHost =
+    process.env.REACT_APP_ENV === "production"
+        ? window.location.host
+        : "localhost:8000";
+
+const ws = new WebSocket(
+    `${
+        process.env.REACT_APP_ENV === "production" ? "wss" : "ws"
+    }://${currentHost}/ws`
+);
+
+const currentDomain =
+    process.env.REACT_APP_ENV === "production"
+        ? window.location.origin
+        : "localhost:8000";
 
 function App() {
     const [wsQuestion, setWsQuestion] = useState(null);
     const [wsAnswer, setWsAnswer] = useState(null);
-
-    const currentHost =
-        process.env.REACT_APP_ENV === "production"
-            ? window.location.host
-            : "localhost:8000";
-
-    const ws = new WebSocket(
-        `${
-            process.env.REACT_APP_ENV === "production" ? "wss" : "ws"
-        }://${currentHost}/ws`
-    );
-
-    const currentDomain =
-        process.env.REACT_APP_ENV === "production"
-            ? window.location.origin
-            : "localhost:8000";
 
     setInterval(() => {
         if (!isOpen(ws)) {
