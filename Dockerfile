@@ -28,6 +28,8 @@ RUN REACT_APP_ENV=production npm run build
 
 from node:18-alpine as final
 
+WORKDIR /app
+
 COPY --from=frontend /app/build /app/build
 COPY --from=frontend /app/public /app/public
 COPY --from=frontend /app/node_modules /app/node_modules
