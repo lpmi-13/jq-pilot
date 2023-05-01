@@ -19,7 +19,7 @@ WORKDIR /app
 
 COPY ./frontend/package.json /app/package.json
 
-RUN npm install
+RUN npm install --omit=dev
 
 COPY ./frontend/public /app/public
 COPY ./frontend/src /app/src
@@ -31,7 +31,6 @@ from node:18-alpine as final
 WORKDIR /app
 
 COPY --from=frontend /app/build /app/build
-COPY --from=frontend /app/public /app/public
 COPY --from=frontend /app/node_modules /app/node_modules
 COPY --from=builder /app/jq-pilot /app/jq-pilot
 
