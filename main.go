@@ -339,17 +339,35 @@ func generateNextQuestionAnswer() {
 func getAnswer(c *gin.Context) {
 	// we keep the current function type in state so we know how to compare the answer
 	if currentFunctionType == jsonToStringArray {
-		response, err := ioutil.ReadAll(c.Request.Body)
-		if err != nil {
-			log.Fatal(err)
+		var actualAnswer []string
+
+		if err := c.BindJSON(&actualAnswer); err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
 		}
-		log.Println(response)
+
+		diff := deep.Equal(actualAnswer, purchaseAnswerDataStringArray)
+
+		if diff == nil {
+			log.Println("ye olde string slice is all good!")
+			generateNextQuestionAnswer()
+		} else {
+			log.Println("wrong answer, please try again")
+		}
+
 	} else if currentFunctionType == jsonToIntArray {
-		response, err := ioutil.ReadAll(c.Request.Body)
-		if err != nil {
-			log.Fatal(err)
+		var actualAnswer []int
+
+		if err := c.BindJSON(&actualAnswer); err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
 		}
-		log.Println(response)
+
+		diff := deep.Equal(actualAnswer, purchaseAnswerDataIntArray)
+		if diff == nil {
+			log.Println("get that int slice!")
+			generateNextQuestionAnswer()
+		} else {
+			log.Println("wrong answer, please try again")
+		}
 	} else if currentFunctionType == jsonToInt {
 		response, err := ioutil.ReadAll(c.Request.Body)
 		if err != nil {
