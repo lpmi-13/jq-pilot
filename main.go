@@ -218,16 +218,19 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+// this is crap and should be more general
 func getQuestion(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, personQuestionData)
+	if currentQuestionType == util.SimplePeopleQuestions {
+		c.IndentedJSON(http.StatusOK, personQuestionData)
+	} else if currentQuestionType == util.SimplePurchaseQuestions {
+		c.IndentedJSON(http.StatusOK, purchaseQuestionData)
+	}
 }
 
 func generateNextQuestionAnswer() {
 	// we need to know what type of question we want so that we can use that to determine the subset
 	// of function types to use to create the activity
 	currentQuestionType = util.GenerateQuestionType()
-
-	log.Println("current question type is:", currentQuestionType)
 
 	// there's probably a better way to structure this hierarchy, but we'll just go with
 	// something dumb and verbose for now
@@ -336,9 +339,17 @@ func generateNextQuestionAnswer() {
 func getAnswer(c *gin.Context) {
 	// we keep the current function type in state so we know how to compare the answer
 	if currentFunctionType == jsonToStringArray {
-		// not implemented
+		response, err := ioutil.ReadAll(c.Request.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(response)
 	} else if currentFunctionType == jsonToIntArray {
-		// not implemented
+		response, err := ioutil.ReadAll(c.Request.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Println(response)
 	} else if currentFunctionType == jsonToInt {
 		response, err := ioutil.ReadAll(c.Request.Body)
 		if err != nil {
