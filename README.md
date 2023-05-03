@@ -168,6 +168,13 @@ We also want some choices that involve purchases
     "currency": string,
     "
 
+For doing things like finding unique values and length of arrays, we'll
+have a super simple data structure that's just lottery picks
+
+-    LotteryPicks
+    "person": string
+    "lotteryNumbers": []int
+
 ## Iterations
 
 1. First MVP is just three hardcoded json problems that can be worked through in sequence.

@@ -3,6 +3,7 @@ package transforms
 import (
 	"log"
 	"math/rand"
+	"sort"
 	"time"
 
 	"jq-pilot/util"
@@ -10,7 +11,9 @@ import (
 
 type PureJson map[string]interface{}
 
-type PureJsonArray map[string][]util.FakePurchase
+type PureJsonArrayPurchases map[string][]util.FakePurchase
+
+type PureJsonArrayLottery map[string][]util.FakeLotteryPick
 
 // these are the Simple Person Question functions
 // (we'll split these different question types out into separate files eventually, but keeping
@@ -154,7 +157,7 @@ func KeepOneKey(jsonInput PureJson) PureJson {
 }
 
 // these are the Simple Purchase Question functions
-func GetAllArrayStringValues(jsonInput PureJsonArray) []string {
+func GetAllArrayStringValues(jsonInput PureJsonArrayPurchases) []string {
 	rand.Seed(time.Now().UnixNano())
 
 	// just grab the currency for now...this is nasty
@@ -178,7 +181,7 @@ func GetAllArrayStringValues(jsonInput PureJsonArray) []string {
 }
 
 // this also feels highly duplicated from the above, and should be generalized
-func GetAllArrayIntValues(jsonInput PureJsonArray) []int {
+func GetAllArrayIntValues(jsonInput PureJsonArrayPurchases) []int {
 	rand.Seed(time.Now().UnixNano())
 
 	// keysToGrabArrayValues := []string{"purchaseCode"}
@@ -197,4 +200,35 @@ func GetAllArrayIntValues(jsonInput PureJsonArray) []int {
 	log.Println(valuesArray)
 
 	return valuesArray
+}
+
+// here are some fuctions to transform the lottery picks stuff
+func GetAllUniqueArrayIntValues(jsonInput PureJsonArrayLottery) []int {
+	nestedLotteryPicks := jsonInput["lotteryPicks"]
+	totalValuesArray := []int{}
+
+	// get each number from each of the lotter picks object in the array
+	for i := range nestedLotteryPicks {
+		for j := range nestedLotteryPicks[i].Numbers {
+			totalValuesArray = append(totalValuesArray, nestedLotteryPicks[i].Numbers[j])
+		}
+	}
+
+	uniqueValues := util.Unique(totalValuesArray)
+	// we do this to make the jq operations easier...since the `unique` native function in
+	// jq does a sort automatically, it's easier to just let users use it without needing
+	// to figure out how to do a unique without a sort, which is much more cumbersom
+	sort.Ints(uniqueValues)
+	log.Println("unique values:", uniqueValues)
+
+	return uniqueValues
+}
+
+// this could definitely be more generic, since there are a lot of potential
+// applications for "find the total number of things/keys/etc"
+func GetNumberOfPicks(jsonInput PureJsonArrayLottery) int {
+	nestedLotteryPicks := jsonInput["lotteryPicks"]
+
+	// this is SUPES basic, like "just find the number of lottery picks"
+	return len(nestedLotteryPicks)
 }

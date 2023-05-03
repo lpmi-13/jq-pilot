@@ -48,6 +48,16 @@ type JsonToStringArrayQuestion struct {
 	Answer   []string                       `json:"answer"`
 }
 
+type JsonToIntArrayLotteryQuestion struct {
+	Question map[string][]util.FakeLotteryPick `json:"question"`
+	Answer   []int                             `json:"answer"`
+}
+
+type JsonToIntLotteryQuestion struct {
+	Question map[string][]util.FakeLotteryPick `json:"question"`
+	Answer   int                               `json:"answer"`
+}
+
 const (
 	jsonToJson        = "jsonToJson"
 	jsonToString      = "jsonToString"
@@ -63,6 +73,9 @@ var (
 	purchaseFunctionTypesToCall = []string{
 		jsonToStringArray, jsonToIntArray,
 	}
+	lotteryFunctionTypesToCall = []string{
+		jsonToIntArray, jsonToInt,
+	}
 	delay                         = 500
 	totalJsonToJsonFunctions      = 3
 	totalJsonToStringFunctions    = 1
@@ -73,13 +86,20 @@ var (
 	personAnswerDataJson          transforms.PureJson
 	personAnswerDataString        string
 	personAnswerDataInt           int
-	purchaseQuestionData          transforms.PureJsonArray
+	purchaseQuestionData          transforms.PureJsonArrayPurchases
 	purchaseAnswerDataIntArray    []int
 	purchaseAnswerDataStringArray []string
+	lotteryQuestionData           transforms.PureJsonArrayLottery
+	lotteryAnswerDataIntArray     []int
+	lotteryAnswerDataInt          int
 )
 
-func generatePurchaseQuestionData() transforms.PureJsonArray {
-	return transforms.PureJsonArray{"purchases": util.GeneratePurchaseList()}
+func generateLotteryPickQuestionData() transforms.PureJsonArrayLottery {
+	return transforms.PureJsonArrayLottery{"lotteryPicks": util.GenerateLotteryPicks()}
+}
+
+func generatePurchaseQuestionData() transforms.PureJsonArrayPurchases {
+	return transforms.PureJsonArrayPurchases{"purchases": util.GeneratePurchaseList()}
 }
 
 func generatePersonQuestionData() transforms.PureJson {
@@ -113,6 +133,7 @@ func generatePersonQuestionData() transforms.PureJson {
 }
 
 func main() {
+	// this should be dynamic to set the first exercise instead of the same one every time
 	currentQuestionType = util.SimplePeopleQuestions
 	currentFunctionType = jsonToJson
 	personQuestionData = generatePersonQuestionData()
@@ -159,32 +180,53 @@ func main() {
 			var response []byte
 			if string(message) == "update" {
 				var mixedResponse interface{}
-				if currentFunctionType == jsonToJson {
-					mixedResponse = JsonToJsonQuestion{
-						Question: personQuestionData,
-						Answer:   personAnswerDataJson,
+				if currentQuestionType == util.SimplePeopleQuestions {
+					if currentFunctionType == jsonToJson {
+						mixedResponse = JsonToJsonQuestion{
+							Question: personQuestionData,
+							Answer:   personAnswerDataJson,
+						}
+					} else if currentFunctionType == jsonToString {
+						mixedResponse = JsonToStringQuestion{
+							Question: personQuestionData,
+							Answer:   personAnswerDataString,
+						}
+					} else if currentFunctionType == jsonToInt {
+						mixedResponse = JsonToIntQuestion{
+							Question: personQuestionData,
+							Answer:   personAnswerDataInt,
+						}
+					} else {
+						log.Println("couldn't match function type for people question")
 					}
-				} else if currentFunctionType == jsonToString {
-					mixedResponse = JsonToStringQuestion{
-						Question: personQuestionData,
-						Answer:   personAnswerDataString,
+				} else if currentQuestionType == util.SimplePurchaseQuestions {
+					if currentFunctionType == jsonToIntArray {
+						mixedResponse = JsonToIntArrayQuestion{
+							Question: purchaseQuestionData,
+							Answer:   purchaseAnswerDataIntArray,
+						}
+					} else if currentFunctionType == jsonToStringArray {
+						mixedResponse = JsonToStringArrayQuestion{
+							Question: purchaseQuestionData,
+							Answer:   purchaseAnswerDataStringArray,
+						}
 					}
-				} else if currentFunctionType == jsonToInt {
-					mixedResponse = JsonToIntQuestion{
-						Question: personQuestionData,
-						Answer:   personAnswerDataInt,
+				} else if currentQuestionType == util.SimpleLotteryQuestions {
+					if currentFunctionType == jsonToIntArray {
+						mixedResponse = JsonToIntArrayLotteryQuestion{
+							Question: lotteryQuestionData,
+							Answer:   lotteryAnswerDataIntArray,
+						}
+					} else if currentFunctionType == jsonToInt {
+						mixedResponse = JsonToIntLotteryQuestion{
+							Question: lotteryQuestionData,
+							Answer:   lotteryAnswerDataInt,
+						}
 					}
-				} else if currentFunctionType == jsonToIntArray {
-					mixedResponse = JsonToIntArrayQuestion{
-						Question: purchaseQuestionData,
-						Answer:   purchaseAnswerDataIntArray,
-					}
-				} else if currentFunctionType == jsonToStringArray {
-					mixedResponse = JsonToStringArrayQuestion{
-						Question: purchaseQuestionData,
-						Answer:   purchaseAnswerDataStringArray,
-					}
+				} else {
+					log.Fatal("couldn't get question type")
 				}
+
 				response, err = json.Marshal(mixedResponse)
 				if err != nil {
 					log.Println("could not marshall json")
@@ -195,9 +237,11 @@ func main() {
 
 					break
 				}
-			}
 
-			time.Sleep(time.Duration(delay) * time.Millisecond)
+				time.Sleep(time.Duration(delay) * time.Millisecond)
+			} else {
+				log.Fatal("no dice")
+			}
 		}
 	})
 
@@ -224,7 +268,16 @@ func getQuestion(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, personQuestionData)
 	} else if currentQuestionType == util.SimplePurchaseQuestions {
 		c.IndentedJSON(http.StatusOK, purchaseQuestionData)
+	} else if currentQuestionType == util.SimpleLotteryQuestions {
+		c.IndentedJSON(http.StatusOK, lotteryQuestionData)
 	}
+}
+
+func getNextFunctionType(functionTypesList []string) string {
+	totalFunctionTypes := len(functionTypesList)
+	functionArrayIndex := rand.Intn(totalFunctionTypes)
+
+	return functionTypesList[functionArrayIndex]
 }
 
 func generateNextQuestionAnswer() {
@@ -235,181 +288,256 @@ func generateNextQuestionAnswer() {
 	// there's probably a better way to structure this hierarchy, but we'll just go with
 	// something dumb and verbose for now
 	if currentQuestionType == util.SimplePeopleQuestions {
-		totalFunctionTypes := len(peopleFunctionTypesToCall)
-		functionArrayIndex := rand.Intn(totalFunctionTypes)
-		currentFunctionType = peopleFunctionTypesToCall[functionArrayIndex]
+		currentFunctionType = getNextFunctionType(peopleFunctionTypesToCall)
 	} else if currentQuestionType == util.SimplePurchaseQuestions {
-		totalFunctionTypes := len(purchaseFunctionTypesToCall)
-		functionArrayIndex := rand.Intn(totalFunctionTypes)
-		currentFunctionType = purchaseFunctionTypesToCall[functionArrayIndex]
+		currentFunctionType = getNextFunctionType(purchaseFunctionTypesToCall)
+	} else if currentQuestionType == util.SimpleLotteryQuestions {
+		currentFunctionType = getNextFunctionType(lotteryFunctionTypesToCall)
 	} else {
 		log.Fatal("this blew up because we couldn't determine the currentFunctionType")
 	}
 
-	log.Println("and the current function type is:", currentFunctionType)
+	switch currentQuestionType {
+	case util.SimpleLotteryQuestions:
+		switch currentFunctionType {
+		case jsonToIntArray:
 
-	// this should really by something like nextFunctionType, but we can refactor later
-	switch currentFunctionType {
-	// this is where the Simple Purchase Question exercises are generated
-	case jsonToIntArray:
-		var jsonToIntArrayFunction func(transforms.PureJsonArray) []int
+			var jsonToIntArrayFunction func(transforms.PureJsonArrayLottery) []int
 
-		functionToCall := 0
+			// only one so far
+			functionToCall := 0
 
-		switch functionToCall {
-		case 0:
-			jsonToIntArrayFunction = transforms.GetAllArrayIntValues
-		default:
-			log.Fatal("blow it all to hell!")
+			switch functionToCall {
+			case 0:
+				jsonToIntArrayFunction = transforms.GetAllUniqueArrayIntValues
+			}
+
+			lotteryQuestionData = generateLotteryPickQuestionData()
+			lotteryAnswerDataIntArray = jsonToIntArrayFunction(lotteryQuestionData)
+		case jsonToInt:
+			log.Println("now serving json to Int")
+
+			var jsonToIntFunction func(transforms.PureJsonArrayLottery) int
+
+			// only one so far here too
+			functionToCall := 0
+
+			switch functionToCall {
+			case 0:
+				jsonToIntFunction = transforms.GetNumberOfPicks
+			}
+
+			lotteryQuestionData = generateLotteryPickQuestionData()
+			lotteryAnswerDataInt = jsonToIntFunction(lotteryQuestionData)
 		}
 
-		purchaseQuestionData = generatePurchaseQuestionData()
-		purchaseAnswerDataIntArray = jsonToIntArrayFunction(purchaseQuestionData)
-	case jsonToStringArray:
-		var jsonToStringArrayFunction func(transforms.PureJsonArray) []string
+	case util.SimplePeopleQuestions:
 
-		functionToCall := 0
-
-		switch functionToCall {
-		case 0:
-			jsonToStringArrayFunction = transforms.GetAllArrayStringValues
-		default:
-			log.Fatal("whoa...this massively blew up")
-		}
-
-		purchaseQuestionData = generatePurchaseQuestionData()
-		purchaseAnswerDataStringArray = jsonToStringArrayFunction(purchaseQuestionData)
-
+		// this should really by something like nextFunctionType, but we can refactor later
+		switch currentFunctionType {
 		// this is where the Simple Person Question exercises are generated
-	case jsonToInt:
-		var jsonToIntFunction func(transforms.PureJson) int
+		case jsonToInt:
+			var jsonToIntFunction func(transforms.PureJson) int
 
-		// only one of these at the moment, same as below
-		functionToCall := 0
+			// only one of these at the moment, same as below
+			functionToCall := 0
 
-		switch functionToCall {
-		case 0:
-			jsonToIntFunction = transforms.GetOneKeyIntValue
+			switch functionToCall {
+			case 0:
+				jsonToIntFunction = transforms.GetOneKeyIntValue
+			default:
+				log.Fatal("this deffo blew up")
+			}
+
+			personQuestionData = generatePersonQuestionData()
+			personAnswerDataInt = jsonToIntFunction(personQuestionData)
+		case jsonToString:
+			var jsonToStringFunction func(transforms.PureJson) string
+
+			// we should have more of these, but for now, we just hardcode to 0
+			// functionCall := rand.Intn(totalJsonToStringFunctions)
+			functionToCall := 0
+
+			switch functionToCall {
+			case 0:
+				jsonToStringFunction = transforms.GetOneKeyStringValue
+			default:
+				log.Fatal("this blew up!")
+			}
+
+			personQuestionData = generatePersonQuestionData()
+			personAnswerDataString = jsonToStringFunction(personQuestionData)
+
+		case jsonToJson:
+			var jsonToJsonFunction func(transforms.PureJson) transforms.PureJson
+
+			functionToCall := rand.Intn(totalJsonToJsonFunctions)
+
+			switch functionToCall {
+			case 0:
+				jsonToJsonFunction = transforms.DeleteRandomKeys
+			case 1:
+				jsonToJsonFunction = transforms.DeleteOneKey
+			case 2:
+				jsonToJsonFunction = transforms.KeepOneKey
+			default:
+				log.Fatal("this blew up because we couldn't match the functionToCall here")
+			}
+
+			personQuestionData = generatePersonQuestionData()
+			personAnswerDataJson = jsonToJsonFunction(personQuestionData)
 		default:
-			log.Fatal("this deffo blew up")
+			log.Fatal("blew the F up!")
 		}
+	case util.SimplePurchaseQuestions:
+		switch currentFunctionType {
+		// this is where the Simple Purchase Question exercises are generated
+		case jsonToIntArray:
+			var jsonToIntArrayFunction func(transforms.PureJsonArrayPurchases) []int
 
-		personQuestionData = generatePersonQuestionData()
-		personAnswerDataInt = jsonToIntFunction(personQuestionData)
-	case jsonToString:
-		var jsonToStringFunction func(transforms.PureJson) string
+			functionToCall := 0
 
-		// we should have more of these, but for now, we just hardcode to 0
-		// functionCall := rand.Intn(totalJsonToStringFunctions)
-		functionToCall := 0
+			switch functionToCall {
+			case 0:
+				jsonToIntArrayFunction = transforms.GetAllArrayIntValues
+			default:
+				log.Fatal("blow it all to hell!")
+			}
 
-		switch functionToCall {
-		case 0:
-			jsonToStringFunction = transforms.GetOneKeyStringValue
-		default:
-			log.Fatal("this blew up!")
+			purchaseQuestionData = generatePurchaseQuestionData()
+			purchaseAnswerDataIntArray = jsonToIntArrayFunction(purchaseQuestionData)
+		case jsonToStringArray:
+			var jsonToStringArrayFunction func(transforms.PureJsonArrayPurchases) []string
+
+			functionToCall := 0
+
+			switch functionToCall {
+			case 0:
+				jsonToStringArrayFunction = transforms.GetAllArrayStringValues
+			default:
+				log.Fatal("whoa...this massively blew up")
+			}
+
+			purchaseQuestionData = generatePurchaseQuestionData()
+			purchaseAnswerDataStringArray = jsonToStringArrayFunction(purchaseQuestionData)
 		}
-
-		personQuestionData = generatePersonQuestionData()
-		personAnswerDataString = jsonToStringFunction(personQuestionData)
-
-	case jsonToJson:
-		var jsonToJsonFunction func(transforms.PureJson) transforms.PureJson
-
-		functionToCall := rand.Intn(totalJsonToJsonFunctions)
-
-		switch functionToCall {
-		case 0:
-			jsonToJsonFunction = transforms.DeleteRandomKeys
-		case 1:
-			jsonToJsonFunction = transforms.DeleteOneKey
-		case 2:
-			jsonToJsonFunction = transforms.KeepOneKey
-		default:
-			log.Fatal("this blew up because we couldn't match the functionToCall here")
-		}
-
-		personQuestionData = generatePersonQuestionData()
-		personAnswerDataJson = jsonToJsonFunction(personQuestionData)
 	default:
-		log.Fatal("blew the F up!")
+		log.Println("fell into the default question type...for...reasons...")
 	}
 }
 
 func getAnswer(c *gin.Context) {
-	// we keep the current function type in state so we know how to compare the answer
-	if currentFunctionType == jsonToStringArray {
-		var actualAnswer []string
+	if currentQuestionType == util.SimplePurchaseQuestions {
+		// we keep the current function type in state so we know how to compare the answer
+		if currentFunctionType == jsonToStringArray {
+			var actualAnswer []string
 
-		if err := c.BindJSON(&actualAnswer); err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
+			if err := c.BindJSON(&actualAnswer); err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+			}
+
+			diff := deep.Equal(actualAnswer, purchaseAnswerDataStringArray)
+
+			if diff == nil {
+				log.Println("ye olde string slice is all good!")
+				generateNextQuestionAnswer()
+			} else {
+				log.Println("wrong answer, please try again")
+			}
+		} else if currentFunctionType == jsonToIntArray {
+			var actualAnswer []int
+
+			if err := c.BindJSON(&actualAnswer); err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+			}
+
+			diff := deep.Equal(actualAnswer, purchaseAnswerDataIntArray)
+			if diff == nil {
+				log.Println("get that int slice!")
+				generateNextQuestionAnswer()
+			} else {
+				log.Println("wrong answer, please try again")
+			}
 		}
+	} else if currentQuestionType == util.SimplePeopleQuestions {
+		if currentFunctionType == jsonToString {
+			response, err := ioutil.ReadAll(c.Request.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
 
-		diff := deep.Equal(actualAnswer, purchaseAnswerDataStringArray)
+			if string(response) == personAnswerDataString {
+				log.Println("you got it!")
+				generateNextQuestionAnswer()
+			} else {
+				log.Println("wrong answer, please try again")
+			}
+		} else if currentFunctionType == jsonToInt {
+			response, err := ioutil.ReadAll(c.Request.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
 
-		if diff == nil {
-			log.Println("ye olde string slice is all good!")
-			generateNextQuestionAnswer()
-		} else {
-			log.Println("wrong answer, please try again")
+			result, err := strconv.Atoi(string(response))
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			if result == personAnswerDataInt {
+				log.Println("get that int for the people!")
+				generateNextQuestionAnswer()
+			} else {
+				log.Println("wrong answer, please try again")
+			}
+		} else if currentFunctionType == jsonToJson {
+			var actualAnswer transforms.PureJson
+
+			log.Println("got to here")
+			if err := c.BindJSON(&actualAnswer); err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+			}
+
+			diff := deep.Equal(actualAnswer, personAnswerDataJson)
+			if diff == nil {
+				log.Println("noice, bruh!")
+				generateNextQuestionAnswer()
+			} else {
+				log.Println("wrong answer, please try again")
+			}
 		}
+	} else if currentQuestionType == util.SimpleLotteryQuestions {
+		// these are the exact same implementation as above, so BE BETTER!
+		if currentFunctionType == jsonToIntArray {
+			var actualAnswer []int
 
-	} else if currentFunctionType == jsonToIntArray {
-		var actualAnswer []int
+			if err := c.BindJSON(&actualAnswer); err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+			}
 
-		if err := c.BindJSON(&actualAnswer); err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
-		}
+			diff := deep.Equal(actualAnswer, lotteryAnswerDataIntArray)
+			if diff == nil {
+				log.Println("get that int slice of lottery picks!")
+				generateNextQuestionAnswer()
+			} else {
+				log.Println("wrong answer, please try again")
+			}
+		} else if currentFunctionType == jsonToInt {
+			response, err := ioutil.ReadAll(c.Request.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
 
-		diff := deep.Equal(actualAnswer, purchaseAnswerDataIntArray)
-		if diff == nil {
-			log.Println("get that int slice!")
-			generateNextQuestionAnswer()
-		} else {
-			log.Println("wrong answer, please try again")
-		}
-	} else if currentFunctionType == jsonToInt {
-		response, err := ioutil.ReadAll(c.Request.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
+			result, err := strconv.Atoi(string(response))
+			if err != nil {
+				log.Fatal(err)
+			}
 
-		result, err := strconv.Atoi(string(response))
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if result == personAnswerDataInt {
-			log.Println("you got that int, bruh!")
-			generateNextQuestionAnswer()
-		} else {
-			log.Println("wrong answer, please try again")
-		}
-	} else if currentFunctionType == jsonToString {
-		response, err := ioutil.ReadAll(c.Request.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if string(response) == personAnswerDataString {
-			log.Println("you got it!")
-			generateNextQuestionAnswer()
-		} else {
-			log.Println("wrong answer, please try again")
-		}
-	} else if currentFunctionType == jsonToJson {
-		var actualAnswer transforms.PureJson
-
-		if err := c.BindJSON(&actualAnswer); err != nil {
-			c.AbortWithStatus(http.StatusBadRequest)
-		}
-
-		diff := deep.Equal(actualAnswer, personAnswerDataJson)
-		if diff == nil {
-			log.Println("noice, bruh!")
-			generateNextQuestionAnswer()
-		} else {
-			log.Println("wrong answer, please try again")
+			if result == lotteryAnswerDataInt {
+				log.Println("get that int for total lottery picks!")
+				generateNextQuestionAnswer()
+			} else {
+				log.Println("wrong answer, please try again")
+			}
 		}
 	} else {
 		log.Println("No current function type...sad day")

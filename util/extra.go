@@ -12,8 +12,10 @@ import (
 // to use for practice:
 // - simple people-based objects for very basic filtering
 // - simple arrays of purchases for filtering and basic aggregation and deduplications
+// - simple arrays of lottery picks for finding uniq values and total number of values
 // - more complicated stuff later...
 const (
+	SimpleLotteryQuestions  = "simpleLotteryQuestions"
 	SimplePeopleQuestions   = "simplePeopleQuestions"
 	SimplePurchaseQuestions = "simplePurchaseQuestions"
 )
@@ -37,7 +39,7 @@ const (
 // So we'll keep it as two different string array for now and merge or refactor or whatever into
 // something a bit cleaner eventually
 var PossibleQuestionTypes = []string{
-	SimplePeopleQuestions, SimplePurchaseQuestions,
+	SimpleLotteryQuestions, SimplePeopleQuestions, SimplePurchaseQuestions,
 }
 
 func GenerateQuestionType() string {
@@ -157,6 +159,46 @@ type FakePurchase struct {
 	PurchaseItem     string
 	// literally just putting this int stuff in so we can have an exercise for an array of ints
 	PurchaseCode int `faker:"oneof: 4, 9, 18, 55, 102, 188, 225, 801, 3997"`
+}
+
+type FakeLotteryPick struct {
+	Person string `faker:"first_name"`
+	// we'll fill this in with pure golang
+	Numbers []int
+}
+
+func GenerateLotteryPicks() []FakeLotteryPick {
+	rand.Seed(time.Now().UnixNano())
+
+	var fakePicksArray []FakeLotteryPick
+
+	maxNumberOfPicks := 6
+
+	// so we always have at least 2 picks
+	randomAmountOfPicks := rand.Intn(maxNumberOfPicks) + 2
+
+	for i := 0; i < randomAmountOfPicks; i++ {
+		var numbersArray []int
+
+		var lotteryPick FakeLotteryPick
+
+		numberOfPicks := 5
+		maxLotteryNumber := 10
+
+		err := faker.FakeData(&lotteryPick)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for i := 0; i < numberOfPicks; i++ {
+			numbersArray = append(numbersArray, rand.Intn(maxLotteryNumber))
+		}
+
+		lotteryPick.Numbers = numbersArray
+		fakePicksArray = append(fakePicksArray, lotteryPick)
+	}
+
+	return fakePicksArray
 }
 
 func GeneratePurchaseList() []FakePurchase {
@@ -281,4 +323,21 @@ func PickOneLocation() string {
 	locationToPick := rand.Intn(totalLocations)
 
 	return possibleLocations[locationToPick]
+}
+
+// this also feels like it should be somewhere in the standard lib, but I will shamelessly
+// copy it from the internet until it is!
+func Unique(intSlice []int) []int {
+	keys := make(map[int]bool)
+	list := []int{}
+
+	for _, entry := range intSlice {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+
+			list = append(list, entry)
+		}
+	}
+
+	return list
 }
