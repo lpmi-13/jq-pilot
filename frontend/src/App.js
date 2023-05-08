@@ -1,5 +1,5 @@
 import { Fragment, useState } from "react";
-import "./App.css";
+import "./styles/App.scss";
 
 const isOpen = (ws) => {
     return ws.readyState === ws.OPEN;
@@ -62,11 +62,11 @@ function App() {
                             </pre>
                         </div>
                     </div>
-                    <div className="instructions">
+                    <div className="codeblock instructions">
                         Try to transform the structure from{" "}
-                        <code>{currentDomain}/question</code>
+                        <pre>{currentDomain}/question</pre>
                         into the filtered data and send it to{" "}
-                        <code>{currentDomain}/answer</code>
+                        <pre>{currentDomain}/answer</pre>
                     </div>
                 </Fragment>
             ) : (

@@ -1,0 +1,65 @@
+@import "./mixins.scss";
+
+.App {
+    text-align: center;
+}
+
+.container {
+    font-size: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    @include respond-to("small") {
+        // this is everything bigger than "small"
+        font-size: 1rem;
+    }
+}
+
+.codeblock pre {
+    background: grey;
+    padding: 1.5em;
+    font-size: 0.65rem;
+    @include respond-to("small") {
+        font-size: 1rem;
+    }
+}
+
+.flexblock {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    width: 90%;
+    @include respond-to("small") {
+        flex-direction: row;
+    }
+}
+
+.instructions {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+.arrow {
+    transform: rotate(90deg);
+    font-size: 2rem;
+    @include respond-to("small") {
+        font-size: 4rem;
+        transform: rotate(0deg);
+    }
+}
+
+.loading {
+    text-align: center;
+}
+
+.instructions {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin: 1em 5em;
+}
