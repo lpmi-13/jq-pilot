@@ -19,7 +19,7 @@
 .codeblock pre {
     background: grey;
     padding: 1.5em;
-    font-size: 0.65rem;
+    font-size: 0.85rem;
     @include respond-to("small") {
         font-size: 1rem;
     }
