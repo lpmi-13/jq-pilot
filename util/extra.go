@@ -42,21 +42,12 @@ var PossibleQuestionTypes = []string{
 	SimpleLotteryQuestions, SimplePeopleQuestions, SimplePurchaseQuestions,
 }
 
-func GenerateQuestionType() string {
-	rand.Seed(time.Now().UnixNano())
-
-	totalPossibleQuestionTypes := len(PossibleQuestionTypes)
-	questionTypeToChose := rand.Intn(totalPossibleQuestionTypes)
-
-	return PossibleQuestionTypes[questionTypeToChose]
-}
-
 var possibleActivities = []string{
 	"hiking", "golf", "fishing", "resting", "puzzles", "tennis", "fishing",
 	"baking", "knitting", "reading", "hacking", "writing", "painting",
 }
 
-var possibleAges = []float64{
+var PossibleAges = []float64{
 	10, 33, 39, 13, 52, 19, 64, 24, 52, 44, 20, 84, 27, 63, 27, 62, 36,
 }
 
@@ -71,7 +62,7 @@ var possibleCurrencies = []string{
 	"USD", "GBP", "CNY", "JPY", "EUR", "CAD", "AUS", "MNT", "THB", "IDR",
 }
 
-var possibleIDs = []float64{
+var PossibleIDs = []float64{
 	23345, 383885, 2229494, 192929585, 22828385, 558585,
 }
 
@@ -79,7 +70,7 @@ var possiblePurchaseItems = []string{
 	"car", "truck", "van", "plane", "boat", "motorcycle", "bus",
 }
 
-var possibleNames = []string{
+var PossibleNames = []string{
 	"Alice", "Bob", "Christine", "Dan",
 	"Elsa", "Frank", "Greta", "Harry", "Ingrid",
 	"Jack", "Kelly", "Liam", "Mary", "Nick", "Ollie",
@@ -87,12 +78,13 @@ var possibleNames = []string{
 	"William", "Yvonne",
 }
 
-var possibleLocations = []string{
+var PossibleLocations = []string{
 	"Chicago", "London", "Paris", "Shanghai", "Nairobi", "Amsterdam",
 	"Venice", "Sao Paolo", "Santiago", "Los Angeles", "New Orleans",
 	"Karachi", "Kigali", "Rabat", "Zagreb", "Tokyo",
 }
 
+// searches for an ID in an array and returns true if found
 func ContainsElement[T comparable](s []T, id T) bool {
 	for _, v := range s {
 		if v == id {
@@ -120,22 +112,13 @@ func MakeRangeFloats(min, max int) []float64 {
 	return b
 }
 
-func GeneratePossibleAges() float64 {
+// a generic function to take an array and return one of the items at random
+func GeneratePossibleValue[T any](valuesArray []T) T {
 	rand.Seed(time.Now().UnixNano())
 
-	ageToChoose := rand.Intn(len(possibleAges))
+	indexToChoose := rand.Intn(len(valuesArray))
 
-	return possibleAges[ageToChoose]
-}
-
-// we currently use this for the ID in the person object, but we'll replace it
-// with something better down the road
-func GeneratePurchaseID() float64 {
-	rand.Seed(time.Now().UnixNano())
-
-	IDToChoose := rand.Intn(len(possibleIDs))
-
-	return possibleIDs[IDToChoose]
+	return valuesArray[indexToChoose]
 }
 
 type FakePurchase struct {
@@ -207,18 +190,10 @@ func GeneratePurchaseList() []FakePurchase {
 	// we might end up substituting something like a bounded string array of values and
 	// then let faker take care of the randomization
 	for i := range purchasesArray {
-		purchasesArray[i].PurchaseItem = generatePurchaseItem()
+		purchasesArray[i].PurchaseItem = GeneratePossibleValue(possiblePurchaseItems)
 	}
 
 	return purchasesArray
-}
-
-func generatePurchaseItem() string {
-	rand.Seed(time.Now().UnixNano())
-
-	itemToChose := rand.Intn(len(possiblePurchaseItems))
-
-	return possiblePurchaseItems[itemToChose]
 }
 
 func PickActivities() map[string]string {
@@ -289,25 +264,6 @@ func PickFavoriteColors() []string {
 	}
 
 	return colorsArray
-}
-
-func PickOneName() string {
-	rand.Seed(time.Now().UnixNano())
-
-	totalNames := len(possibleNames)
-	nameToPick := rand.Intn(totalNames)
-
-	return possibleNames[nameToPick]
-}
-
-// these are essentially the same and could be refactored to a more general "pick one thing from array" function
-func PickOneLocation() string {
-	rand.Seed(time.Now().UnixNano())
-
-	totalLocations := len(possibleLocations)
-	locationToPick := rand.Intn(totalLocations)
-
-	return possibleLocations[locationToPick]
 }
 
 // this also feels like it should be somewhere in the standard lib, but I will shamelessly

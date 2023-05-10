@@ -123,10 +123,10 @@ func generatePersonQuestionData() transforms.PureJson {
 	// the coercion here (and above) into floats is super annoying, but all integers are
 	// floats by default when go sees json, so here we are!
 	return transforms.PureJson{
-		"age":            util.GeneratePossibleAges(),
-		"id":             util.GeneratePurchaseID(),
-		"name":           util.PickOneName(),
-		"location":       util.PickOneLocation(),
+		"age":            util.GeneratePossibleValue(util.PossibleAges),
+		"id":             util.GeneratePossibleValue(util.PossibleIDs),
+		"name":           util.GeneratePossibleValue(util.PossibleNames),
+		"location":       util.GeneratePossibleValue(util.PossibleLocations),
 		"favoriteColors": favoriteColorsInterface,
 		"activities":     activitiesInterface,
 	}
@@ -273,26 +273,19 @@ func getQuestion(c *gin.Context) {
 	}
 }
 
-func getNextFunctionType(functionTypesList []string) string {
-	totalFunctionTypes := len(functionTypesList)
-	functionArrayIndex := rand.Intn(totalFunctionTypes)
-
-	return functionTypesList[functionArrayIndex]
-}
-
 func generateNextQuestionAnswer() {
 	// we need to know what type of question we want so that we can use that to determine the subset
 	// of function types to use to create the activity
-	currentQuestionType = util.GenerateQuestionType()
+	currentQuestionType = util.GeneratePossibleValue(util.PossibleQuestionTypes)
 
 	// there's probably a better way to structure this hierarchy, but we'll just go with
 	// something dumb and verbose for now
 	if currentQuestionType == util.SimplePeopleQuestions {
-		currentFunctionType = getNextFunctionType(peopleFunctionTypesToCall)
+		currentFunctionType = util.GeneratePossibleValue(peopleFunctionTypesToCall)
 	} else if currentQuestionType == util.SimplePurchaseQuestions {
-		currentFunctionType = getNextFunctionType(purchaseFunctionTypesToCall)
+		currentFunctionType = util.GeneratePossibleValue(purchaseFunctionTypesToCall)
 	} else if currentQuestionType == util.SimpleLotteryQuestions {
-		currentFunctionType = getNextFunctionType(lotteryFunctionTypesToCall)
+		currentFunctionType = util.GeneratePossibleValue(lotteryFunctionTypesToCall)
 	} else {
 		log.Fatal("this blew up because we couldn't determine the currentFunctionType")
 	}
