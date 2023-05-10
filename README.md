@@ -66,6 +66,7 @@ echo '{"id": 123, "name": "Cam", "location": "Earth"} | jq '{"location"}'
 ```
 echo '{"id": 123, "name": "Adam", "location": "Mars"} | jq 'del(.id)'
 # {"name": "Adam", "location": "Mars"}
+```
 
 
 -   get an array element by index
@@ -171,7 +172,7 @@ We also want some choices that involve purchases
 For doing things like finding unique values and length of arrays, we'll
 have a super simple data structure that's just lottery picks
 
--    LotteryPicks
+-   LotteryPicks
     "person": string
     "lotteryNumbers": []int
 
