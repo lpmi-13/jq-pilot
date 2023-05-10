@@ -18,7 +18,7 @@ var (
 func TestContainsStringTrue(t *testing.T) {
 	stringToFind := "b"
 
-	actual := util.ContainsString(stringArray, stringToFind)
+	actual := util.ContainsElement(stringArray, stringToFind)
 
 	if expected := true; expected != actual {
 		t.Error("Expected to find the string and did not")
@@ -28,7 +28,7 @@ func TestContainsStringTrue(t *testing.T) {
 func TestContainsStringFalse(t *testing.T) {
 	stringToFind := "f"
 
-	actual := util.ContainsString(stringArray, stringToFind)
+	actual := util.ContainsElement(stringArray, stringToFind)
 
 	if expected := false; expected != actual {
 		t.Error("Expected to not find the string and did")
@@ -38,7 +38,7 @@ func TestContainsStringFalse(t *testing.T) {
 func TestContainsFloatTrue(t *testing.T) {
 	floatToFind := float64(34)
 
-	actual := util.ContainsFloat(floatArray, floatToFind)
+	actual := util.ContainsElement(floatArray, floatToFind)
 
 	if expected := true; expected != actual {
 		t.Error("Expected to find the float and did not")
@@ -48,7 +48,7 @@ func TestContainsFloatTrue(t *testing.T) {
 func TestContainsFloatFalse(t *testing.T) {
 	floatToFind := float64(88)
 
-	actual := util.ContainsFloat(floatArray, floatToFind)
+	actual := util.ContainsElement(floatArray, floatToFind)
 
 	if expected := false; expected != actual {
 		t.Error("Expected not to find the float and did")

@@ -93,22 +93,7 @@ var possibleLocations = []string{
 	"Karachi", "Kigali", "Rabat", "Zagreb", "Tokyo",
 }
 
-// this should go in a utility file or something
-// no idea why this isn't in the standard lib
-// we just wanna know if an int is in a slice
-func ContainsFloat(s []float64, id float64) bool {
-	for _, v := range s {
-		if v == id {
-			return true
-		}
-	}
-
-	return false
-}
-
-// this should probably use generics, and be condensed with the above function,
-// but I'll get there eventually
-func ContainsString(s []string, id string) bool {
+func ContainsElement[T comparable](s []T, id T) bool {
 	for _, v := range s {
 		if v == id {
 			return true
@@ -250,7 +235,7 @@ func PickActivities() map[string]string {
 		for {
 			randomActivitiesIndex = rand.Intn(totalActivities)
 
-			if !ContainsString(activitiesArray, possibleActivities[randomActivitiesIndex]) {
+			if !ContainsElement(activitiesArray, possibleActivities[randomActivitiesIndex]) {
 				break
 			}
 		}
@@ -295,7 +280,7 @@ func PickFavoriteColors() []string {
 
 		for {
 			randomColorIndex = rand.Intn(totalColors)
-			if !ContainsString(colorsArray, possibleColors[randomColorIndex]) {
+			if !ContainsElement(colorsArray, possibleColors[randomColorIndex]) {
 				break
 			}
 		}
