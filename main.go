@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"io/ioutil"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -24,16 +24,19 @@ import (
 type JsonToJsonQuestion struct {
 	Question map[string]interface{} `json:"question"`
 	Answer   map[string]interface{} `json:"answer"`
+	Prompt   string                 `json:"prompt"`
 }
 
 type JsonToStringQuestion struct {
 	Question map[string]interface{} `json:"question"`
 	Answer   string                 `json:"answer"`
+	Prompt   string                 `json:"prompt"`
 }
 
 type JsonToIntQuestion struct {
 	Question map[string]interface{} `json:"question"`
 	Answer   int                    `json:"answer"`
+	Prompt   string                 `json:"prompt"`
 }
 
 // it's at this point that I feel like I want some generics, so I'll get to implementing
@@ -41,21 +44,25 @@ type JsonToIntQuestion struct {
 type JsonToIntArrayQuestion struct {
 	Question map[string][]util.FakePurchase `json:"question"`
 	Answer   []int                          `json:"answer"`
+	Prompt   string                         `json:"prompt"`
 }
 
 type JsonToStringArrayQuestion struct {
 	Question map[string][]util.FakePurchase `json:"question"`
 	Answer   []string                       `json:"answer"`
+	Prompt   string                         `json:"prompt"`
 }
 
 type JsonToIntArrayLotteryQuestion struct {
 	Question map[string][]util.FakeLotteryPick `json:"question"`
 	Answer   []int                             `json:"answer"`
+	Prompt   string                            `json:"prompt"`
 }
 
 type JsonToIntLotteryQuestion struct {
 	Question map[string][]util.FakeLotteryPick `json:"question"`
 	Answer   int                               `json:"answer"`
+	Prompt   string                            `json:"prompt"`
 }
 
 const (
@@ -64,6 +71,7 @@ const (
 	jsonToInt         = "jsonToInt"
 	jsonToStringArray = "jsonToStringArray"
 	jsonToIntArray    = "jsonToIntArray"
+	promptPlaceholder = "please do stuff!"
 )
 
 var (
@@ -185,16 +193,19 @@ func main() {
 						mixedResponse = JsonToJsonQuestion{
 							Question: personQuestionData,
 							Answer:   personAnswerDataJson,
+							Prompt:   promptPlaceholder,
 						}
 					} else if currentFunctionType == jsonToString {
 						mixedResponse = JsonToStringQuestion{
 							Question: personQuestionData,
 							Answer:   personAnswerDataString,
+							Prompt:   promptPlaceholder,
 						}
 					} else if currentFunctionType == jsonToInt {
 						mixedResponse = JsonToIntQuestion{
 							Question: personQuestionData,
 							Answer:   personAnswerDataInt,
+							Prompt:   promptPlaceholder,
 						}
 					} else {
 						log.Println("couldn't match function type for people question")
@@ -204,11 +215,13 @@ func main() {
 						mixedResponse = JsonToIntArrayQuestion{
 							Question: purchaseQuestionData,
 							Answer:   purchaseAnswerDataIntArray,
+							Prompt:   promptPlaceholder,
 						}
 					} else if currentFunctionType == jsonToStringArray {
 						mixedResponse = JsonToStringArrayQuestion{
 							Question: purchaseQuestionData,
 							Answer:   purchaseAnswerDataStringArray,
+							Prompt:   promptPlaceholder,
 						}
 					}
 				} else if currentQuestionType == util.SimpleLotteryQuestions {
@@ -216,11 +229,13 @@ func main() {
 						mixedResponse = JsonToIntArrayLotteryQuestion{
 							Question: lotteryQuestionData,
 							Answer:   lotteryAnswerDataIntArray,
+							Prompt:   promptPlaceholder,
 						}
 					} else if currentFunctionType == jsonToInt {
 						mixedResponse = JsonToIntLotteryQuestion{
 							Question: lotteryQuestionData,
 							Answer:   lotteryAnswerDataInt,
+							Prompt:   promptPlaceholder,
 						}
 					}
 				} else {
@@ -294,7 +309,6 @@ func generateNextQuestionAnswer() {
 	case util.SimpleLotteryQuestions:
 		switch currentFunctionType {
 		case jsonToIntArray:
-
 			var jsonToIntArrayFunction func(transforms.PureJsonArrayLottery) []int
 
 			// only one so far
@@ -325,7 +339,6 @@ func generateNextQuestionAnswer() {
 		}
 
 	case util.SimplePeopleQuestions:
-
 		// this should really by something like nextFunctionType, but we can refactor later
 		switch currentFunctionType {
 		// this is where the Simple Person Question exercises are generated
@@ -454,7 +467,7 @@ func getAnswer(c *gin.Context) {
 		}
 	} else if currentQuestionType == util.SimplePeopleQuestions {
 		if currentFunctionType == jsonToString {
-			response, err := ioutil.ReadAll(c.Request.Body)
+			response, err := io.ReadAll(c.Request.Body)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -466,7 +479,7 @@ func getAnswer(c *gin.Context) {
 				log.Println("wrong answer, please try again")
 			}
 		} else if currentFunctionType == jsonToInt {
-			response, err := ioutil.ReadAll(c.Request.Body)
+			response, err := io.ReadAll(c.Request.Body)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -515,7 +528,7 @@ func getAnswer(c *gin.Context) {
 				log.Println("wrong answer, please try again")
 			}
 		} else if currentFunctionType == jsonToInt {
-			response, err := ioutil.ReadAll(c.Request.Body)
+			response, err := io.ReadAll(c.Request.Body)
 			if err != nil {
 				log.Fatal(err)
 			}
