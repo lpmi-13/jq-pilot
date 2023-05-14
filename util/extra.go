@@ -268,11 +268,11 @@ func PickFavoriteColors() []string {
 
 // this also feels like it should be somewhere in the standard lib, but I will shamelessly
 // copy it from the internet until it is!
-func Unique(intSlice []int) []int {
-	keys := make(map[int]bool)
-	list := []int{}
+func Unique[T comparable](inputSlice []T) []T {
+	keys := make(map[T]bool)
+	list := []T{}
 
-	for _, entry := range intSlice {
+	for _, entry := range inputSlice {
 		if _, value := keys[entry]; !value {
 			keys[entry] = true
 

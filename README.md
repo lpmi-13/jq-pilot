@@ -2,11 +2,31 @@
 
 Inspired by the `jq` wizardry of @csibar and @thomas-franklin, I decided I needed a micromaterial to up my jq game, so I made this to generate learning exercises for myself.
 
+live at https://jkew.party
+
+## The exercises
+
+based on: https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4
+
+-   grab the raw value of a key
+-   filter for one specific key
+-   delete one specific key
+-   keep one specific key
+-   get all values for repeated nested key
+-   get all unique values for repeated nested key
+-   get number of keys
+-   get length of array
+-   get range of values from array (eg, [2:4])
+-   filter array for all integers values above/below a value
+-   get the type of array item
+-   get min and max values of an array
+
 ## Local runs
 
 To start this up and try some exercises, just run
 
 ```
+go mod download
 npm i --prefix frontend
 npm start --prefix frontend
 ```
@@ -67,7 +87,6 @@ echo '{"id": 123, "name": "Cam", "location": "Earth"} | jq '{"location"}'
 echo '{"id": 123, "name": "Adam", "location": "Mars"} | jq 'del(.id)'
 # {"name": "Adam", "location": "Mars"}
 ```
-
 
 -   get an array element by index
 
@@ -184,8 +203,10 @@ have a super simple data structure that's just lottery picks
 
 2. Second form will be dynamic problems where you can continuously fire GET requests at the question endpoint, and get a different problem each time you correctly solve it. If you just fire requests at the GET endpoint without sending the required answer, you'll get the same prompt.
 
-
 > this is also done.
 
 3. Third step is to start adding different types of activities to cover all the common use cases for JQ
+
+```
+
 ```
