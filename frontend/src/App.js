@@ -24,6 +24,7 @@ const currentDomain =
 function App() {
     const [wsQuestion, setWsQuestion] = useState(null);
     const [wsAnswer, setWsAnswer] = useState(null);
+    const [wsPrompt, setWsPrompt] = useState(null);
 
     setInterval(() => {
         if (!isOpen(ws)) {
@@ -33,9 +34,10 @@ function App() {
     }, 2000);
 
     ws.onmessage = ({ data }) => {
-        const { question, answer } = JSON.parse(data);
-        setWsQuestion(question);
+        const { answer, prompt, question } = JSON.parse(data);
         setWsAnswer(answer);
+        setWsQuestion(question);
+        setWsPrompt(prompt);
     };
 
     return (
@@ -43,7 +45,7 @@ function App() {
             {wsQuestion ? (
                 <Fragment>
                     <div className="App">
-                        <h2>here's the question!</h2>
+                        <h2>{wsPrompt}</h2>
                     </div>
                     <div className="flexblock">
                         <div className="codeblock">

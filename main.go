@@ -71,7 +71,6 @@ const (
 	jsonToInt         = "jsonToInt"
 	jsonToStringArray = "jsonToStringArray"
 	jsonToIntArray    = "jsonToIntArray"
-	promptPlaceholder = "please do stuff!"
 )
 
 var (
@@ -100,6 +99,7 @@ var (
 	lotteryQuestionData           transforms.PureJsonArrayLottery
 	lotteryAnswerDataIntArray     []int
 	lotteryAnswerDataInt          int
+	prompt                        = "please do stuff!"
 )
 
 func generateLotteryPickQuestionData() transforms.PureJsonArrayLottery {
@@ -145,7 +145,7 @@ func main() {
 	currentQuestionType = util.SimplePeopleQuestions
 	currentFunctionType = jsonToJson
 	personQuestionData = generatePersonQuestionData()
-	personAnswerDataJson = transforms.DeleteOneKey(personQuestionData)
+	personAnswerDataJson, prompt = transforms.DeleteOneKey(personQuestionData)
 
 	// using standard library "flag" package
 	flag.String("MODE", "dev", "whether we're running in dev or production mode")
@@ -193,19 +193,19 @@ func main() {
 						mixedResponse = JsonToJsonQuestion{
 							Question: personQuestionData,
 							Answer:   personAnswerDataJson,
-							Prompt:   promptPlaceholder,
+							Prompt:   prompt,
 						}
 					} else if currentFunctionType == jsonToString {
 						mixedResponse = JsonToStringQuestion{
 							Question: personQuestionData,
 							Answer:   personAnswerDataString,
-							Prompt:   promptPlaceholder,
+							Prompt:   prompt,
 						}
 					} else if currentFunctionType == jsonToInt {
 						mixedResponse = JsonToIntQuestion{
 							Question: personQuestionData,
 							Answer:   personAnswerDataInt,
-							Prompt:   promptPlaceholder,
+							Prompt:   prompt,
 						}
 					} else {
 						log.Println("couldn't match function type for people question")
@@ -215,13 +215,13 @@ func main() {
 						mixedResponse = JsonToIntArrayQuestion{
 							Question: purchaseQuestionData,
 							Answer:   purchaseAnswerDataIntArray,
-							Prompt:   promptPlaceholder,
+							Prompt:   prompt,
 						}
 					} else if currentFunctionType == jsonToStringArray {
 						mixedResponse = JsonToStringArrayQuestion{
 							Question: purchaseQuestionData,
 							Answer:   purchaseAnswerDataStringArray,
-							Prompt:   promptPlaceholder,
+							Prompt:   prompt,
 						}
 					}
 				} else if currentQuestionType == util.SimpleLotteryQuestions {
@@ -229,13 +229,13 @@ func main() {
 						mixedResponse = JsonToIntArrayLotteryQuestion{
 							Question: lotteryQuestionData,
 							Answer:   lotteryAnswerDataIntArray,
-							Prompt:   promptPlaceholder,
+							Prompt:   prompt,
 						}
 					} else if currentFunctionType == jsonToInt {
 						mixedResponse = JsonToIntLotteryQuestion{
 							Question: lotteryQuestionData,
 							Answer:   lotteryAnswerDataInt,
-							Prompt:   promptPlaceholder,
+							Prompt:   prompt,
 						}
 					}
 				} else {
@@ -309,7 +309,7 @@ func generateNextQuestionAnswer() {
 	case util.SimpleLotteryQuestions:
 		switch currentFunctionType {
 		case jsonToIntArray:
-			var jsonToIntArrayFunction func(transforms.PureJsonArrayLottery) []int
+			var jsonToIntArrayFunction func(transforms.PureJsonArrayLottery) ([]int, string)
 
 			// only one so far
 			functionToCall := 0
@@ -320,11 +320,10 @@ func generateNextQuestionAnswer() {
 			}
 
 			lotteryQuestionData = generateLotteryPickQuestionData()
-			lotteryAnswerDataIntArray = jsonToIntArrayFunction(lotteryQuestionData)
+			lotteryAnswerDataIntArray, prompt = jsonToIntArrayFunction(lotteryQuestionData)
 		case jsonToInt:
-			log.Println("now serving json to Int")
 
-			var jsonToIntFunction func(transforms.PureJsonArrayLottery) int
+			var jsonToIntFunction func(transforms.PureJsonArrayLottery) (int, string)
 
 			// only one so far here too
 			functionToCall := 0
@@ -335,7 +334,7 @@ func generateNextQuestionAnswer() {
 			}
 
 			lotteryQuestionData = generateLotteryPickQuestionData()
-			lotteryAnswerDataInt = jsonToIntFunction(lotteryQuestionData)
+			lotteryAnswerDataInt, prompt = jsonToIntFunction(lotteryQuestionData)
 		}
 
 	case util.SimplePeopleQuestions:
@@ -343,7 +342,7 @@ func generateNextQuestionAnswer() {
 		switch currentFunctionType {
 		// this is where the Simple Person Question exercises are generated
 		case jsonToInt:
-			var jsonToIntFunction func(transforms.PureJson) int
+			var jsonToIntFunction func(transforms.PureJson) (int, string)
 
 			// only one of these at the moment, same as below
 			functionToCall := 0
@@ -356,9 +355,9 @@ func generateNextQuestionAnswer() {
 			}
 
 			personQuestionData = generatePersonQuestionData()
-			personAnswerDataInt = jsonToIntFunction(personQuestionData)
+			personAnswerDataInt, prompt = jsonToIntFunction(personQuestionData)
 		case jsonToString:
-			var jsonToStringFunction func(transforms.PureJson) string
+			var jsonToStringFunction func(transforms.PureJson) (string, string)
 
 			// we should have more of these, but for now, we just hardcode to 0
 			// functionCall := rand.Intn(totalJsonToStringFunctions)
@@ -372,10 +371,10 @@ func generateNextQuestionAnswer() {
 			}
 
 			personQuestionData = generatePersonQuestionData()
-			personAnswerDataString = jsonToStringFunction(personQuestionData)
+			personAnswerDataString, prompt = jsonToStringFunction(personQuestionData)
 
 		case jsonToJson:
-			var jsonToJsonFunction func(transforms.PureJson) transforms.PureJson
+			var jsonToJsonFunction func(transforms.PureJson) (transforms.PureJson, string)
 
 			functionToCall := rand.Intn(totalJsonToJsonFunctions)
 
@@ -391,7 +390,7 @@ func generateNextQuestionAnswer() {
 			}
 
 			personQuestionData = generatePersonQuestionData()
-			personAnswerDataJson = jsonToJsonFunction(personQuestionData)
+			personAnswerDataJson, prompt = jsonToJsonFunction(personQuestionData)
 		default:
 			log.Fatal("blew the F up!")
 		}
@@ -399,7 +398,7 @@ func generateNextQuestionAnswer() {
 		switch currentFunctionType {
 		// this is where the Simple Purchase Question exercises are generated
 		case jsonToIntArray:
-			var jsonToIntArrayFunction func(transforms.PureJsonArrayPurchases) []int
+			var jsonToIntArrayFunction func(transforms.PureJsonArrayPurchases) ([]int, string)
 
 			functionToCall := 0
 
@@ -411,9 +410,9 @@ func generateNextQuestionAnswer() {
 			}
 
 			purchaseQuestionData = generatePurchaseQuestionData()
-			purchaseAnswerDataIntArray = jsonToIntArrayFunction(purchaseQuestionData)
+			purchaseAnswerDataIntArray, prompt = jsonToIntArrayFunction(purchaseQuestionData)
 		case jsonToStringArray:
-			var jsonToStringArrayFunction func(transforms.PureJsonArrayPurchases) []string
+			var jsonToStringArrayFunction func(transforms.PureJsonArrayPurchases) ([]string, string)
 
 			functionToCall := 0
 
@@ -425,7 +424,7 @@ func generateNextQuestionAnswer() {
 			}
 
 			purchaseQuestionData = generatePurchaseQuestionData()
-			purchaseAnswerDataStringArray = jsonToStringArrayFunction(purchaseQuestionData)
+			purchaseAnswerDataStringArray, prompt = jsonToStringArrayFunction(purchaseQuestionData)
 		}
 	default:
 		log.Println("fell into the default question type...for...reasons...")
