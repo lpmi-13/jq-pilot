@@ -1,4 +1,5 @@
 import { Fragment, useState } from "react";
+import { Formatter, FracturedJsonOptions } from "fracturedjsonjs";
 import "./styles/App.scss";
 
 const isOpen = (ws) => {
@@ -20,6 +21,12 @@ const currentDomain =
     process.env.REACT_APP_ENV === "production"
         ? window.location.origin
         : "localhost:8000";
+
+const formatter = new Formatter();
+const options = new FracturedJsonOptions();
+options.MaxTotalLineLength = 40;
+options.IndentSpaces = 2;
+formatter.Options = options;
 
 function App() {
     const [wsQuestion, setWsQuestion] = useState(null);
@@ -49,7 +56,7 @@ function App() {
                     </div>
                     <div className="flexblock">
                         <div className="codeblock">
-                            <pre>{JSON.stringify(wsQuestion, null, 2)}</pre>
+                            <pre>{formatter.Serialize(wsQuestion)}</pre>
                         </div>
                         <div className="arrow">{`=>`}</div>
                         <div className="codeblock">
@@ -60,7 +67,7 @@ function App() {
                                 {(typeof wsAnswer === "string") |
                                 (typeof wsAnswer === "number")
                                     ? wsAnswer
-                                    : JSON.stringify(wsAnswer, null, 2)}
+                                    : formatter.Serialize(wsAnswer)}
                             </pre>
                         </div>
                     </div>
