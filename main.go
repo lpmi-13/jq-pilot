@@ -53,6 +53,12 @@ type JsonToStringArrayQuestion struct {
 	Prompt   string                         `json:"prompt"`
 }
 
+type JsonToJsonArrayQuestion struct {
+	Question map[string][]util.FakePurchase `json:"question"`
+	Answer   []util.FakePurchase            `json:"answer"`
+	Prompt   string                         `json:"prompt"`
+}
+
 type JsonToIntArrayLotteryQuestion struct {
 	Question map[string][]util.FakeLotteryPick `json:"question"`
 	Answer   []int                             `json:"answer"`
@@ -78,7 +84,7 @@ var (
 		jsonToJson, jsonToString, jsonToInt,
 	}
 	purchaseFunctionTypesToCall = []string{
-		jsonToStringArray, jsonToIntArray,
+		jsonToStringArray, jsonToIntArray, jsonToJson,
 	}
 	lotteryFunctionTypesToCall = []string{
 		jsonToIntArray, jsonToInt,
@@ -96,6 +102,7 @@ var (
 	purchaseQuestionData          transforms.PureJsonArrayPurchases
 	purchaseAnswerDataIntArray    []int
 	purchaseAnswerDataStringArray []string
+	purchaseAnswerDataJsonArray   []util.FakePurchase
 	lotteryQuestionData           transforms.PureJsonArrayLottery
 	lotteryAnswerDataIntArray     []int
 	lotteryAnswerDataInt          int
@@ -221,6 +228,12 @@ func main() {
 						mixedResponse = JsonToStringArrayQuestion{
 							Question: purchaseQuestionData,
 							Answer:   purchaseAnswerDataStringArray,
+							Prompt:   prompt,
+						}
+					} else if currentFunctionType == jsonToJson {
+						mixedResponse = JsonToJsonArrayQuestion{
+							Question: purchaseQuestionData,
+							Answer:   purchaseAnswerDataJsonArray,
 							Prompt:   prompt,
 						}
 					}
@@ -425,7 +438,22 @@ func generateNextQuestionAnswer() {
 
 			purchaseQuestionData = generatePurchaseQuestionData()
 			purchaseAnswerDataStringArray, prompt = jsonToStringArrayFunction(purchaseQuestionData)
+		case jsonToJson:
+			var jsonToJsonArrayFunction func(transforms.PureJsonArrayPurchases) ([]util.FakePurchase, string)
+
+			functionToCall := 0
+
+			switch functionToCall {
+			case 0:
+				jsonToJsonArrayFunction = transforms.GetFilteredByPurchasePrice
+			default:
+				log.Fatal("couldn't figure out which function to use")
+			}
+
+			purchaseQuestionData = generatePurchaseQuestionData()
+			purchaseAnswerDataJsonArray, prompt = jsonToJsonArrayFunction(purchaseQuestionData)
 		}
+
 	default:
 		log.Println("fell into the default question type...for...reasons...")
 	}
@@ -462,6 +490,20 @@ func getAnswer(c *gin.Context) {
 				generateNextQuestionAnswer()
 			} else {
 				log.Println("wrong answer, please try again")
+			}
+		} else if currentFunctionType == jsonToJson {
+			var actualAnswer []util.FakePurchase
+
+			if err := c.BindJSON(&actualAnswer); err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+			}
+
+			diff := deep.Equal(actualAnswer, purchaseAnswerDataJsonArray)
+			if diff == nil {
+				log.Println("nice work, all filtered!")
+				generateNextQuestionAnswer()
+			} else {
+				log.Println("not quite...try again")
 			}
 		}
 	} else if currentQuestionType == util.SimplePeopleQuestions {

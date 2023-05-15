@@ -208,6 +208,57 @@ func GetAllArrayIntValues(jsonInput PureJsonArrayPurchases) ([]int, string) {
 	return valuesArray, "get all the purchase codes"
 }
 
+func GetFilteredByPurchasePrice(jsonInput PureJsonArrayPurchases) ([]util.FakePurchase, string) {
+	// hacky boolean to decide whether it's finding purchases above or below a certain price
+	filterForHigher := util.GenerateRandomBoolean()
+
+	// hacky constant for now
+	var minPurchasePrice float64 = 100
+
+	var maxPurchasePrice float64 = 0
+
+	for i := range jsonInput["purchases"] {
+		if jsonInput["purchases"][i].PurchasePrice > maxPurchasePrice {
+			maxPurchasePrice = jsonInput["purchases"][i].PurchasePrice
+		}
+
+		if jsonInput["purchases"][i].PurchasePrice < minPurchasePrice {
+			minPurchasePrice = jsonInput["purchases"][i].PurchasePrice
+		}
+	}
+
+	differenceBetweenMinMax := maxPurchasePrice - minPurchasePrice
+
+	middlePrice := maxPurchasePrice - (differenceBetweenMinMax / 2)
+
+	copiedArray := []util.FakePurchase{}
+
+	// now that we have a price in the middle of the highest and lowest prices, just
+	// return either the purchases with a higher price if "filterForHigher" is true,
+	// or ones with a lower price if it's false
+	for i := range jsonInput["purchases"] {
+		if filterForHigher {
+			if jsonInput["purchases"][i].PurchasePrice > middlePrice {
+				copiedArray = append(copiedArray, jsonInput["purchases"][i])
+			}
+		} else {
+			if jsonInput["purchases"][i].PurchasePrice < middlePrice {
+				copiedArray = append(copiedArray, jsonInput["purchases"][i])
+			}
+		}
+	}
+
+	var promptString string
+
+	if filterForHigher {
+		promptString = fmt.Sprintf("find all purchases with a price above: %.2f", differenceBetweenMinMax)
+	} else {
+		promptString = fmt.Sprintf("find all purchases with a price below %.2f", differenceBetweenMinMax)
+	}
+
+	return copiedArray, promptString
+}
+
 // here are some fuctions to transform the lottery picks stuff
 func GetAllUniqueArrayIntValues(jsonInput PureJsonArrayLottery) ([]int, string) {
 	nestedLotteryPicks := jsonInput["lotteryPicks"]

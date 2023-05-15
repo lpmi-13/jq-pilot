@@ -126,7 +126,8 @@ type FakePurchase struct {
 	PurchaseCurrency string `faker:"currency"`
 	PurchaseItem     string
 	// literally just putting this int stuff in so we can have an exercise for an array of ints
-	PurchaseCode int `faker:"oneof: 4, 9, 18, 55, 102, 188, 225, 801, 3997"`
+	PurchaseCode  int     `faker:"oneof: 4, 9, 18, 55, 102, 188, 225, 801, 3997"`
+	PurchasePrice float64 `faker:"oneof: 1.99, 3.50, 10.81, 19.99, 25.50, 45.00, 76.89, 85.15, 90.12, 99.99"`
 }
 
 type FakeLotteryPick struct {
@@ -191,6 +192,8 @@ func GeneratePurchaseList() []FakePurchase {
 	// then let faker take care of the randomization
 	for i := range purchasesArray {
 		purchasesArray[i].PurchaseItem = GeneratePossibleValue(possiblePurchaseItems)
+		// we truncate this because it messes with the UI to have a code block that wide
+		purchasesArray[i].PurchaseID = purchasesArray[i].PurchaseID[:12]
 	}
 
 	return purchasesArray
@@ -281,4 +284,9 @@ func Unique[T comparable](inputSlice []T) []T {
 	}
 
 	return list
+}
+
+func GenerateRandomBoolean() bool {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(2) == 1
 }
