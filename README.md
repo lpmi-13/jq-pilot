@@ -12,12 +12,13 @@ based on: https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4
 -   filter for one specific key
 -   delete one specific key
 -   keep one specific key
+-   get a deeply nested value
 -   get all values for repeated nested key
 -   get all unique values for repeated nested key
 -   get number of keys
 -   get length of array
 -   get range of values from array (eg, [2:4])
--   filter array for all integers values above/below a value
+-   filter array for all integer values above/below a value
 -   get the type of array item
 -   get min and max values of an array
 
@@ -51,7 +52,7 @@ If you just wanna hack on the gin webserver, you can run go with `nodemon` to ge
 
 > nodemon --exec go run main.go --signal SIGTERM
 
-## Things we want to practice (taken from https://cameronnokes.com/blog/jq-cheatsheet/)
+## Commands to practice (taken from https://cameronnokes.com/blog/jq-cheatsheet/)
 
 -   get a named property
 
@@ -168,32 +169,153 @@ echo '[1, 2, 2, 3]' | jq 'unique'
 
 ```
 
-## Different types of problems
+## Different types of structures
 
-This is for simple named property selection.
+This is for simple things like named property selection, filtering out certain keys, and selecting certain keys. We'll probably also use it for nested values.
 
--   People
-    "age": float64(34),
-    "id": float64(12345),
-    "name": PickOneName(),
-    "location": PickOneLocation(),
-    "favoriteColors": favoriteColorsInterface,
-    "activities": activitiesInterface,
+```
+{
+  "activities": {
+    "friday": "fishing",
+    "monday": "reading",
+    "saturday": "knitting",
+    "sunday": "hiking",
+    "thursday": "baking",
+    "tuesday": "puzzles",
+    "wednesday": "tennis"
+  },
+  "age": 13,
+  "favoriteColors": [
+    "brown",
+    "black",
+    "indigo"
+  ],
+  "id": 22828385,
+  "location": "London",
+  "name": "Pat"
+}
+```
 
-We also want some choices that involve purchases
+We also want some choices that involve doing things with arrays so we can pull out all values for a specific property into an array, and optionally get all the unique ones. We can also count the number of occurrences of things at various levels of nesting.
 
--   Purchases
-    "purchaseId": float(1234),
-    "price": float(23.34),
-    "currency": string,
-    "
+```
+{
+  "purchases": [
+    {
+      "PurchaseID": "2ac8048b10b143c0aed7f7184812b9b2",
+      "PurchaseCurrency": "KYD",
+      "PurchaseItem": "plane",
+      "PurchaseCode": 801
+    },
+    {
+      "PurchaseID": "fdae32eafb294a35a03d5a469a2fdd17",
+      "PurchaseCurrency": "TMT",
+      "PurchaseItem": "boat",
+      "PurchaseCode": 801
+    },
+    {
+      "PurchaseID": "b07fd0d96cff4fc5bbc0fecb023a6725",
+      "PurchaseCurrency": "RUB",
+      "PurchaseItem": "bus",
+      "PurchaseCode": 3997
+    }
+  ]
+}
+```
 
 For doing things like finding unique values and length of arrays, we'll
 have a super simple data structure that's just lottery picks
 
--   LotteryPicks
-    "person": string
-    "lotteryNumbers": []int
+```
+{
+  "lotteryPicks": [
+    {
+      "Person": "Charity",
+      "Numbers": [
+        2,
+        1,
+        8,
+        0,
+        2
+      ]
+    },
+    {
+      "Person": "Bennett",
+      "Numbers": [
+        1,
+        6,
+        3,
+        7,
+        6
+      ]
+    }
+  ]
+}
+```
+
+For filtering by min/max values, we'll have some student grading data. This will probably be the complex one, where we practice object constructors, and filtering by
+max/min value.
+
+[This](https://earthly.dev/blog/jq-select/) is an EXCELLENT resource for some of the more complex commands
+
+```
+{
+    "students": [
+        "Joe": {
+          "grades": {
+            "math": [
+                82, 90, 74, 88, 93, 80
+            ],
+            "art" : [
+                85, 95, 72, 56, 80, 77
+            ],
+            "history": [
+                67, 77, 68, 81, 74, 70
+            ]
+          }
+        },
+       "Susan": {
+          "grades": {
+            "math": [
+                82, 90, 74, 88, 93, 80
+            ],
+            "art" : [
+                85, 95, 72, 56, 80, 77
+            ],
+            "history": [
+                67, 77, 68, 81, 74, 70
+            ]
+          }
+        },
+        "Cameron": {
+          "grades": {
+            "math": [
+                82, 90, 74, 88, 93, 80
+            ],
+            "art" : [
+                85, 95, 72, 56, 80, 77
+            ],
+            "history": [
+                67, 77, 68, 81, 74, 70
+            ]
+          }
+        },
+        "Emily": {
+          "grades": {
+            "math": [
+                82, 90, 74, 88, 93, 80
+            ],
+            "art" : [
+                85, 95, 72, 56, 80, 77
+            ],
+            "history": [
+                67, 77, 68, 81, 74, 70
+            ]
+          }
+       }
+    ]
+}
+```
 
 ## Iterations
 
@@ -206,6 +328,10 @@ have a super simple data structure that's just lottery picks
 > this is also done.
 
 3. Third step is to start adding different types of activities to cover all the common use cases for JQ
+
+```
+
+```
 
 ```
 
