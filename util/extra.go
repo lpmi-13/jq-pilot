@@ -127,7 +127,7 @@ type FakePurchase struct {
 	PurchaseItem     string
 	// literally just putting this int stuff in so we can have an exercise for an array of ints
 	PurchaseCode  int     `faker:"oneof: 4, 9, 18, 55, 102, 188, 225, 801, 3997"`
-	PurchasePrice float64 `faker:"oneof: 1.99, 3.50, 10.81, 19.99, 25.50, 45.00, 76.89, 85.15, 90.12, 99.99"`
+	PurchasePrice float64 `faker:"oneof: 1.99, 3.50, 10.81, 12.18, 19.99,, 22.00, 25.50, 31.67, 38.50, 40.99, 45.00, 67.20, 69.99, 76.89, 85.15, 90.12"`
 }
 
 type FakeLotteryPick struct {
