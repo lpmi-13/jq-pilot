@@ -186,9 +186,7 @@ This is for simple things like named property selection, filtering out certain k
   },
   "age": 13,
   "favoriteColors": [
-    "brown",
-    "black",
-    "indigo"
+    "brown", "black", "indigo"
   ],
   "id": 22828385,
   "location": "London",
@@ -202,19 +200,19 @@ We also want some choices that involve doing things with arrays so we can pull o
 {
   "purchases": [
     {
-      "PurchaseID": "2ac8048b10b143c0aed7f7184812b9b2",
+      "PurchaseID": "2ac8048b10b1",
       "PurchaseCurrency": "KYD",
       "PurchaseItem": "plane",
       "PurchaseCode": 801
     },
     {
-      "PurchaseID": "fdae32eafb294a35a03d5a469a2fdd17",
+      "PurchaseID": "fdae32eafb294",
       "PurchaseCurrency": "TMT",
       "PurchaseItem": "boat",
       "PurchaseCode": 801
     },
     {
-      "PurchaseID": "b07fd0d96cff4fc5bbc0fecb023a6725",
+      "PurchaseID": "b07fd0d96cff4f",
       "PurchaseCurrency": "RUB",
       "PurchaseItem": "bus",
       "PurchaseCode": 3997
@@ -232,21 +230,13 @@ have a super simple data structure that's just lottery picks
     {
       "Person": "Charity",
       "Numbers": [
-        2,
-        1,
-        8,
-        0,
-        2
+        2, 1, 8, 0, 2
       ]
     },
     {
       "Person": "Bennett",
       "Numbers": [
-        1,
-        6,
-        3,
-        7,
-        6
+        1, 6, 3, 7, 6
       ]
     }
   ]
