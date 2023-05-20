@@ -166,11 +166,16 @@ func main() {
 	// don't bother overriding the mode when developing locally
 	viper.SetDefault("PORT", "8000")
 
+	// this is two different checks for MODE == "prod", because we need to set the mode
+	// before we intialize the router, but we can't call router.Use until after we initialize the router
+	if MODE == "prod" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	router := gin.Default()
 
 	// Serve static files to frontend if server is started in production environment
 	if MODE == "prod" {
-		gin.SetMode(gin.ReleaseMode)
 		router.Use(static.Serve("/", static.LocalFile("./build", true)))
 	}
 
