@@ -160,7 +160,7 @@ func generateGradeResults() []int {
 
 	for i := 0; i < 3; i++ {
 		rand.Seed(time.Now().UnixNano())
-		score := rand.Intn(scoreUpperRange) + scoreLowerRange
+		score := rand.Intn(scoreUpperRange-scoreLowerRange) + scoreLowerRange
 
 		scores = append(scores, score)
 	}
