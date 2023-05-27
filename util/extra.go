@@ -133,9 +133,9 @@ type FakePurchase struct {
 	PurchasePrice float64 `faker:"oneof: 1.99, 3.50, 10.81, 12.18, 19.99,, 22.00, 25.50, 31.67, 38.50, 40.99, 45.00, 67.20, 69.99, 76.89, 85.15, 90.12"`
 }
 
+// previously using faker for this, but it sometimes output duplicate names
 type FakeLotteryPick struct {
-	Person string `faker:"first_name"`
-	// we'll fill this in with pure golang
+	Person  string
 	Numbers []int
 }
 
@@ -190,6 +190,8 @@ func GenerateLotteryPicks() []FakeLotteryPick {
 
 	var fakePicksArray []FakeLotteryPick
 
+	var peopleArray []string
+
 	maxNumberOfPicks := 6
 
 	// so we always have at least 2 picks
@@ -200,13 +202,21 @@ func GenerateLotteryPicks() []FakeLotteryPick {
 
 		var lotteryPick FakeLotteryPick
 
+		var randomPeopleIndex int
+
+		for {
+			randomPeopleIndex = rand.Intn(len(PossibleNames))
+
+			if !ContainsElement(peopleArray, PossibleNames[randomPeopleIndex]) {
+				break
+			}
+		}
+
+		peopleArray = append(peopleArray, PossibleNames[randomPeopleIndex])
+		lotteryPick.Person = PossibleNames[randomPeopleIndex]
+
 		numberOfPicks := 5
 		maxLotteryNumber := 10
-
-		err := faker.FakeData(&lotteryPick)
-		if err != nil {
-			log.Fatal(err)
-		}
 
 		for i := 0; i < numberOfPicks; i++ {
 			numbersArray = append(numbersArray, rand.Intn(maxLotteryNumber))
