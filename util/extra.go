@@ -108,7 +108,6 @@ func GetNRandomValuesFromArray[T comparable](a []T, howMany int) []T {
 	var randomIndex int
 
 	for i := 0; i < howMany; i++ {
-		log.Printf("started iteration %v", i)
 
 		for {
 			randomIndex = rand.Intn(len(a))

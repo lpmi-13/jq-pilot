@@ -205,19 +205,22 @@ We also want some choices that involve doing things with arrays so we can pull o
       "PurchaseID": "2ac8048b10b1",
       "PurchaseCurrency": "KYD",
       "PurchaseItem": "plane",
-      "PurchaseCode": 801
+      "PurchaseCode": 801,
+      "PurchasePrice": 3.50
     },
     {
       "PurchaseID": "fdae32eafb294",
       "PurchaseCurrency": "TMT",
       "PurchaseItem": "boat",
-      "PurchaseCode": 801
+      "PurchaseCode": 801,
+      "PurchasePrice": 22.00
     },
     {
       "PurchaseID": "b07fd0d96cff4f",
       "PurchaseCurrency": "RUB",
       "PurchaseItem": "bus",
-      "PurchaseCode": 3997
+      "PurchaseCode": 3997,
+      "PurchasePrice": 45.00
     }
   ]
 }
