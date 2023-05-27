@@ -59,6 +59,12 @@ type JsonToJsonArrayQuestion struct {
 	Prompt   string                         `json:"prompt"`
 }
 
+type JsonToJsonLotteryQuestion struct {
+	Question map[string][]util.FakeLotteryPick `json:"question"`
+	Answer   util.FakeLotteryPick              `json:"answer"`
+	Prompt   string                            `json:"prompt"`
+}
+
 type JsonToIntArrayLotteryQuestion struct {
 	Question map[string][]util.FakeLotteryPick `json:"question"`
 	Answer   []int                             `json:"answer"`
@@ -93,7 +99,7 @@ var (
 		jsonToStringArray, jsonToIntArray, jsonToJson,
 	}
 	lotteryFunctionTypesToCall = []string{
-		jsonToIntArray, jsonToInt,
+		jsonToJson, jsonToIntArray, jsonToInt,
 	}
 	gradesFunctionTypesToCall = []string{
 		jsonToInt,
@@ -115,6 +121,7 @@ var (
 	lotteryQuestionData           transforms.PureJsonArrayLottery
 	lotteryAnswerDataIntArray     []int
 	lotteryAnswerDataInt          int
+	lotteryAnswerDataJson         util.FakeLotteryPick
 	gradesQuestionData            util.ComplexGradesObject
 	gradesAnswerDataInt           int
 	prompt                        = "please do stuff!"
@@ -259,7 +266,13 @@ func main() {
 						}
 					}
 				} else if currentQuestionType == util.SimpleLotteryQuestions {
-					if currentFunctionType == jsonToIntArray {
+					if currentFunctionType == jsonToJson {
+						mixedResponse = JsonToJsonLotteryQuestion{
+							Question: lotteryQuestionData,
+							Answer:   lotteryAnswerDataJson,
+							Prompt:   prompt,
+						}
+					} else if currentFunctionType == jsonToIntArray {
 						mixedResponse = JsonToIntArrayLotteryQuestion{
 							Question: lotteryQuestionData,
 							Answer:   lotteryAnswerDataIntArray,
@@ -335,7 +348,8 @@ func getQuestion(c *gin.Context) {
 func generateNextQuestionAnswer() {
 	// we need to know what type of question we want so that we can use that to determine the subset
 	// of function types to use to create the activity
-	currentQuestionType = util.GeneratePossibleValue(util.PossibleQuestionTypes)
+	// currentQuestionType = util.GeneratePossibleValue(util.PossibleQuestionTypes)
+	currentQuestionType = util.SimpleLotteryQuestions
 
 	// there's probably a better way to structure this hierarchy, but we'll just go with
 	// something dumb and verbose for now
@@ -354,6 +368,18 @@ func generateNextQuestionAnswer() {
 	switch currentQuestionType {
 	case util.SimpleLotteryQuestions:
 		switch currentFunctionType {
+		case jsonToJson:
+			var jsonToJsonFunction func(transforms.PureJsonArrayLottery) (util.FakeLotteryPick, string)
+
+			functionToCall := 0
+
+			switch functionToCall {
+			case 0:
+				jsonToJsonFunction = transforms.PickAWinner
+			}
+
+			lotteryQuestionData = generateLotteryPickQuestionData()
+			lotteryAnswerDataJson, prompt = jsonToJsonFunction(lotteryQuestionData)
 		case jsonToIntArray:
 			var jsonToIntArrayFunction func(transforms.PureJsonArrayLottery) ([]int, string)
 
@@ -368,7 +394,6 @@ func generateNextQuestionAnswer() {
 			lotteryQuestionData = generateLotteryPickQuestionData()
 			lotteryAnswerDataIntArray, prompt = jsonToIntArrayFunction(lotteryQuestionData)
 		case jsonToInt:
-
 			var jsonToIntFunction func(transforms.PureJsonArrayLottery) (int, string)
 
 			// only one so far here too
@@ -606,7 +631,21 @@ func getAnswer(c *gin.Context) {
 		}
 	} else if currentQuestionType == util.SimpleLotteryQuestions {
 		// these are the exact same implementation as above, so BE BETTER!
-		if currentFunctionType == jsonToIntArray {
+		if currentFunctionType == jsonToJson {
+			var actualAnswer util.FakeLotteryPick
+
+			if err := c.BindJSON(&actualAnswer); err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+			}
+
+			diff := deep.Equal(actualAnswer, lotteryAnswerDataJson)
+			if diff == nil {
+				log.Println("you found the winner!")
+				generateNextQuestionAnswer()
+			} else {
+				log.Print("not the winner we're looking for...")
+			}
+		} else if currentFunctionType == jsonToIntArray {
 			var actualAnswer []int
 
 			if err := c.BindJSON(&actualAnswer); err != nil {

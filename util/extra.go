@@ -160,8 +160,9 @@ type FakePurchase struct {
 
 // previously using faker for this, but it sometimes output duplicate names
 type FakeLotteryPick struct {
-	Person  string
-	Numbers []int
+	Person  string `json:"person"`
+	Numbers []int  `json:"numbers"`
+	Winner  bool   `json:"winner"`
 }
 
 type Grades struct {
@@ -256,6 +257,7 @@ func GenerateLotteryPicks() []FakeLotteryPick {
 		}
 
 		lotteryPick.Numbers = numbersArray
+		lotteryPick.Winner = false
 		fakePicksArray = append(fakePicksArray, lotteryPick)
 	}
 

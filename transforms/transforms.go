@@ -175,8 +175,6 @@ func GetAllArrayStringValues(jsonInput PureJsonArrayPurchases) ([]string, string
 		valuesArray = append(valuesArray, nestedPurchases[i].PurchaseCurrency)
 	}
 
-	log.Println(valuesArray)
-
 	return valuesArray, "get all the purchase currencies"
 }
 
@@ -191,8 +189,6 @@ func GetAllArrayIntValues(jsonInput PureJsonArrayPurchases) ([]int, string) {
 	for i := range nestedPurchases {
 		valuesArray = append(valuesArray, nestedPurchases[i].PurchaseCode)
 	}
-
-	log.Println(valuesArray)
 
 	return valuesArray, "get all the purchase codes"
 }
@@ -276,6 +272,24 @@ func GetNumberOfPicks(jsonInput PureJsonArrayLottery) (int, string) {
 
 	// this is SUPES basic, like "just find the number of lottery picks"
 	return len(nestedLotteryPicks), "find the number of lottery picks"
+}
+
+func PickAWinner(jsonInput PureJsonArrayLottery) (util.FakeLotteryPick, string) {
+	// this is super basic just to practice adding fields to objects
+	rand.Seed(time.Now().UnixNano())
+	randomIndex := rand.Intn(len(jsonInput["lotteryPicks"]))
+
+	var winner util.FakeLotteryPick
+
+	for i := range jsonInput["lotteryPicks"] {
+		if i == randomIndex {
+			winner = jsonInput["lotteryPicks"][i]
+		}
+	}
+
+	winner.Winner = true
+
+	return winner, fmt.Sprintf("make %s the winner", winner.Person)
 }
 
 // these are functions for working with the grades data
