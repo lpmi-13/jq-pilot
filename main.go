@@ -348,8 +348,7 @@ func getQuestion(c *gin.Context) {
 func generateNextQuestionAnswer() {
 	// we need to know what type of question we want so that we can use that to determine the subset
 	// of function types to use to create the activity
-	// currentQuestionType = util.GeneratePossibleValue(util.PossibleQuestionTypes)
-	currentQuestionType = util.SimpleLotteryQuestions
+	currentQuestionType = util.GeneratePossibleValue(util.PossibleQuestionTypes)
 
 	// there's probably a better way to structure this hierarchy, but we'll just go with
 	// something dumb and verbose for now
