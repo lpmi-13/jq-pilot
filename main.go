@@ -73,7 +73,7 @@ type JsonToIntLotteryQuestion struct {
 
 type JsonToJsonGradesQuestion struct {
 	Question util.ComplexGradesObject `json:"question"`
-	Answer   util.Student             `json:"answer"`
+	Answer   int                      `json:"answer"`
 	Prompt   string                   `json:"prompt"`
 }
 
@@ -96,7 +96,7 @@ var (
 		jsonToIntArray, jsonToInt,
 	}
 	gradesFunctionTypesToCall = []string{
-		jsonToJson,
+		jsonToInt,
 	}
 	delay                         = 500
 	totalJsonToJsonFunctions      = 3
@@ -116,7 +116,7 @@ var (
 	lotteryAnswerDataIntArray     []int
 	lotteryAnswerDataInt          int
 	gradesQuestionData            util.ComplexGradesObject
-	gradesAnswerData              util.Student
+	gradesAnswerDataInt           int
 	prompt                        = "please do stuff!"
 )
 
@@ -273,10 +273,10 @@ func main() {
 						}
 					}
 				} else if currentQuestionType == util.SimpleGradesQuestions {
-					if currentFunctionType == jsonToJson {
+					if currentFunctionType == jsonToInt {
 						mixedResponse = JsonToJsonGradesQuestion{
 							Question: gradesQuestionData,
-							Answer:   gradesAnswerData,
+							Answer:   gradesAnswerDataInt,
 							Prompt:   prompt,
 						}
 					}
@@ -488,8 +488,8 @@ func generateNextQuestionAnswer() {
 		}
 	case util.SimpleGradesQuestions:
 		switch currentFunctionType {
-		case jsonToJson:
-			var jsonToJsonFunction func(util.ComplexGradesObject) (util.Student, string)
+		case jsonToInt:
+			var jsonToIntFunction func(util.ComplexGradesObject) (int, string)
 
 			// this is getting a bit ridic, since I initially assumed we might want to have different types of transforms
 			// possibly returning the same type of data structure, but what it's turning into is just one type of
@@ -498,13 +498,13 @@ func generateNextQuestionAnswer() {
 
 			switch functionToCall {
 			case 0:
-				jsonToJsonFunction = transforms.GetHighestResultInOneSubject
+				jsonToIntFunction = transforms.GetHighestScoreForPersonInSubject
 			default:
 				log.Fatal("something bad happened")
 			}
 
 			gradesQuestionData = generateGradesQuestionData()
-			gradesAnswerData, prompt = jsonToJsonFunction(gradesQuestionData)
+			gradesAnswerDataInt, prompt = jsonToIntFunction(gradesQuestionData)
 		default:
 			log.Println("fell into the default question type...for...reasons...")
 		}
@@ -639,18 +639,18 @@ func getAnswer(c *gin.Context) {
 			}
 		}
 	} else if currentQuestionType == util.SimpleGradesQuestions {
-		if currentFunctionType == jsonToJson {
-			var actualAnswer util.Student
-
-			if err := c.BindJSON(&actualAnswer); err != nil {
-				c.AbortWithStatus(http.StatusBadRequest)
+		if currentFunctionType == jsonToInt {
+			response, err := io.ReadAll(c.Request.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+			// not 100% sure the double conversion is necessary here
+			result, err := strconv.Atoi(string(response))
+			if err != nil {
+				log.Fatal(err)
 			}
 
-			log.Println("the submitted answer: ", actualAnswer)
-			log.Println("the answer we want: ", gradesAnswerData)
-
-			diff := deep.Equal(actualAnswer, gradesAnswerData)
-			if diff == nil {
+			if result == gradesAnswerDataInt {
 				log.Println("you found the student!")
 				generateNextQuestionAnswer()
 			} else {

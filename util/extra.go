@@ -372,3 +372,20 @@ func GetHighestIntValue(a []int) int {
 
 	return max
 }
+
+// shameless steal from the internet
+func GetRandomKeyFromMap(m map[string][]int) string {
+	rand.Seed(time.Now().UnixNano())
+
+	k := rand.Intn(len(m))
+	i := 0
+
+	for key := range m {
+		if i == k {
+			return key
+		}
+		i++
+	}
+
+	panic("unreachable")
+}

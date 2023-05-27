@@ -293,6 +293,9 @@ func GetNumberOfPicks(jsonInput PureJsonArrayLottery) (int, string) {
 
 // it's very possible that we'll want this to be a general function to get both the highest and lowest scorers
 // but we can just get the highest result version working for now
+
+// this particular function created a transform that I couldn't figure out how to do with jq,
+// so I'm just not gonna use it til I hear back from either Thomas or Rudi Tootie Fresh and Fruity
 func GetHighestResultInOneSubject(jsonInput util.ComplexGradesObject) (util.Student, string) {
 	rand.Seed(time.Now().UnixNano())
 
@@ -328,4 +331,28 @@ func GetHighestResultInOneSubject(jsonInput util.ComplexGradesObject) (util.Stud
 	}
 
 	return selectedStudent, fmt.Sprintf("find the best at: %s", selectedSubject)
+}
+
+func GetHighestScoreForPersonInSubject(jsonInput util.ComplexGradesObject) (int, string) {
+	rand.Seed(time.Now().UnixNano())
+
+	// first we pick a random student
+	randomStudentIndex := rand.Intn(len(jsonInput.Students))
+
+	selectedStudentName := jsonInput.Students[randomStudentIndex].Name
+
+	randomSubject := util.GetRandomKeyFromMap(jsonInput.Students[0].Grades.Results)
+
+	var grades []int
+
+	for i := range jsonInput.Students {
+		if jsonInput.Students[i].Name == selectedStudentName {
+			grades = jsonInput.Students[i].Grades.Results[randomSubject]
+		}
+	}
+
+	// a bit unnecessary to create some state here, but go linter says it's more readable
+	highestGrade := util.GetHighestIntValue(grades)
+
+	return highestGrade, fmt.Sprintf("get the highest %s grade for %s", randomSubject, selectedStudentName)
 }
