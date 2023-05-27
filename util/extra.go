@@ -18,6 +18,7 @@ const (
 	SimpleLotteryQuestions  = "simpleLotteryQuestions"
 	SimplePeopleQuestions   = "simplePeopleQuestions"
 	SimplePurchaseQuestions = "simplePurchaseQuestions"
+	SimpleGradesQuestions   = "simpleGradesQuestions"
 )
 
 // we currently just have two string arrays to hold what is essentially either a 2-dimensional
@@ -39,7 +40,7 @@ const (
 // So we'll keep it as two different string array for now and merge or refactor or whatever into
 // something a bit cleaner eventually
 var PossibleQuestionTypes = []string{
-	SimpleLotteryQuestions, SimplePeopleQuestions, SimplePurchaseQuestions,
+	SimpleGradesQuestions, SimpleLotteryQuestions, SimplePeopleQuestions, SimplePurchaseQuestions,
 }
 
 var possibleActivities = []string{
@@ -83,6 +84,8 @@ var PossibleLocations = []string{
 	"Venice", "Sao Paolo", "Santiago", "Los Angeles", "New Orleans",
 	"Karachi", "Kigali", "Rabat", "Zagreb", "Tokyo",
 }
+
+var PossibleSubjects = []string{"math", "art", "history"}
 
 // searches for an ID in an array and returns true if found
 func ContainsElement[T comparable](s []T, id T) bool {
@@ -134,6 +137,52 @@ type FakeLotteryPick struct {
 	Person string `faker:"first_name"`
 	// we'll fill this in with pure golang
 	Numbers []int
+}
+
+type Grades struct {
+	Results map[string][]int `json:"results"`
+}
+
+type Student struct {
+	Name   string `json:"name"`
+	Grades Grades `json:"grades"`
+}
+
+type ComplexGradesObject struct {
+	Students []Student `json:"students"`
+}
+
+func generateGradeResults() []int {
+	var scores []int
+
+	scoreUpperRange := 100
+	scoreLowerRange := 50
+
+	for i := 0; i < 3; i++ {
+		rand.Seed(time.Now().UnixNano())
+		score := rand.Intn(scoreUpperRange) + scoreLowerRange
+
+		scores = append(scores, score)
+	}
+
+	return scores
+}
+
+func GenerateComplexGradesObject() ComplexGradesObject {
+	// this deeply nested map stuff is wild, but fun
+	return ComplexGradesObject{
+		Students: []Student{
+			{Name: "Joe", Grades: Grades{Results: map[string][]int{
+				"art": generateGradeResults(), "math": generateGradeResults(), "history": generateGradeResults(),
+			}}},
+			{Name: "Susan", Grades: Grades{Results: map[string][]int{
+				"art": generateGradeResults(), "math": generateGradeResults(), "history": generateGradeResults(),
+			}}},
+			{Name: "Cameron", Grades: Grades{Results: map[string][]int{
+				"art": generateGradeResults(), "math": generateGradeResults(), "history": generateGradeResults(),
+			}}},
+		},
+	}
 }
 
 func GenerateLotteryPicks() []FakeLotteryPick {
@@ -289,4 +338,17 @@ func Unique[T comparable](inputSlice []T) []T {
 func GenerateRandomBoolean() bool {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(2) == 1
+}
+
+// apparently we can't use greater than with generics...oh well
+func GetHighestIntValue(a []int) int {
+	max := 0
+
+	for _, value := range a {
+		if value > max {
+			max = value
+		}
+	}
+
+	return max
 }

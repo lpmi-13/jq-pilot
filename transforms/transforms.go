@@ -288,3 +288,44 @@ func GetNumberOfPicks(jsonInput PureJsonArrayLottery) (int, string) {
 	// this is SUPES basic, like "just find the number of lottery picks"
 	return len(nestedLotteryPicks), "find the number of lottery picks"
 }
+
+// these are functions for working with the grades data
+
+// it's very possible that we'll want this to be a general function to get both the highest and lowest scorers
+// but we can just get the highest result version working for now
+func GetHighestResultInOneSubject(jsonInput util.ComplexGradesObject) (util.Student, string) {
+	rand.Seed(time.Now().UnixNano())
+
+	subjectIndex := rand.Intn(len(util.PossibleSubjects))
+	selectedSubject := util.PossibleSubjects[subjectIndex]
+
+	// we'll hold the calculations of which student had the highest score for the particular subject
+	subjectResultsArray := make(map[string]int)
+
+	for i := range jsonInput.Students {
+		studentName := jsonInput.Students[i].Name
+		subjectResult := util.GetHighestIntValue(jsonInput.Students[i].Grades.Results[selectedSubject])
+		subjectResultsArray[studentName] = subjectResult
+	}
+
+	maxScore := 0
+
+	var winnerName string
+
+	for name, score := range subjectResultsArray {
+		if score > maxScore {
+			winnerName = name
+			maxScore = score
+		}
+	}
+
+	var selectedStudent util.Student
+
+	for i := range jsonInput.Students {
+		if jsonInput.Students[i].Name == winnerName {
+			selectedStudent = jsonInput.Students[i]
+		}
+	}
+
+	return selectedStudent, fmt.Sprintf("find the best at: %s", selectedSubject)
+}

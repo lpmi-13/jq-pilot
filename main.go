@@ -71,6 +71,12 @@ type JsonToIntLotteryQuestion struct {
 	Prompt   string                            `json:"prompt"`
 }
 
+type JsonToJsonGradesQuestion struct {
+	Question util.ComplexGradesObject `json:"question"`
+	Answer   util.Student             `json:"answer"`
+	Prompt   string                   `json:"prompt"`
+}
+
 const (
 	jsonToJson        = "jsonToJson"
 	jsonToString      = "jsonToString"
@@ -89,6 +95,9 @@ var (
 	lotteryFunctionTypesToCall = []string{
 		jsonToIntArray, jsonToInt,
 	}
+	gradesFunctionTypesToCall = []string{
+		jsonToJson,
+	}
 	delay                         = 500
 	totalJsonToJsonFunctions      = 3
 	totalJsonToStringFunctions    = 1
@@ -106,6 +115,8 @@ var (
 	lotteryQuestionData           transforms.PureJsonArrayLottery
 	lotteryAnswerDataIntArray     []int
 	lotteryAnswerDataInt          int
+	gradesQuestionData            util.ComplexGradesObject
+	gradesAnswerData              util.Student
 	prompt                        = "please do stuff!"
 )
 
@@ -115,6 +126,11 @@ func generateLotteryPickQuestionData() transforms.PureJsonArrayLottery {
 
 func generatePurchaseQuestionData() transforms.PureJsonArrayPurchases {
 	return transforms.PureJsonArrayPurchases{"purchases": util.GeneratePurchaseList()}
+}
+
+// this has a lot of misdirection and complexity, so it should be simplified
+func generateGradesQuestionData() util.ComplexGradesObject {
+	return util.GenerateComplexGradesObject()
 }
 
 func generatePersonQuestionData() transforms.PureJson {
@@ -256,6 +272,14 @@ func main() {
 							Prompt:   prompt,
 						}
 					}
+				} else if currentQuestionType == util.SimpleGradesQuestions {
+					if currentFunctionType == jsonToJson {
+						mixedResponse = JsonToJsonGradesQuestion{
+							Question: gradesQuestionData,
+							Answer:   gradesAnswerData,
+							Prompt:   prompt,
+						}
+					}
 				} else {
 					log.Fatal("couldn't get question type")
 				}
@@ -303,6 +327,8 @@ func getQuestion(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, purchaseQuestionData)
 	} else if currentQuestionType == util.SimpleLotteryQuestions {
 		c.IndentedJSON(http.StatusOK, lotteryQuestionData)
+	} else if currentQuestionType == util.SimpleGradesQuestions {
+		c.IndentedJSON(http.StatusOK, gradesQuestionData)
 	}
 }
 
@@ -319,6 +345,8 @@ func generateNextQuestionAnswer() {
 		currentFunctionType = util.GeneratePossibleValue(purchaseFunctionTypesToCall)
 	} else if currentQuestionType == util.SimpleLotteryQuestions {
 		currentFunctionType = util.GeneratePossibleValue(lotteryFunctionTypesToCall)
+	} else if currentQuestionType == util.SimpleGradesQuestions {
+		currentFunctionType = util.GeneratePossibleValue(gradesFunctionTypesToCall)
 	} else {
 		log.Fatal("this blew up because we couldn't determine the currentFunctionType")
 	}
@@ -458,9 +486,28 @@ func generateNextQuestionAnswer() {
 			purchaseQuestionData = generatePurchaseQuestionData()
 			purchaseAnswerDataJsonArray, prompt = jsonToJsonArrayFunction(purchaseQuestionData)
 		}
+	case util.SimpleGradesQuestions:
+		switch currentFunctionType {
+		case jsonToJson:
+			var jsonToJsonFunction func(util.ComplexGradesObject) (util.Student, string)
 
-	default:
-		log.Println("fell into the default question type...for...reasons...")
+			// this is getting a bit ridic, since I initially assumed we might want to have different types of transforms
+			// possibly returning the same type of data structure, but what it's turning into is just one type of
+			// data structure per function type, so I'll probably get rid of this hard coding later
+			functionToCall := 0
+
+			switch functionToCall {
+			case 0:
+				jsonToJsonFunction = transforms.GetHighestResultInOneSubject
+			default:
+				log.Fatal("something bad happened")
+			}
+
+			gradesQuestionData = generateGradesQuestionData()
+			gradesAnswerData, prompt = jsonToJsonFunction(gradesQuestionData)
+		default:
+			log.Println("fell into the default question type...for...reasons...")
+		}
 	}
 }
 
@@ -589,6 +636,25 @@ func getAnswer(c *gin.Context) {
 				generateNextQuestionAnswer()
 			} else {
 				log.Println("wrong answer, please try again")
+			}
+		}
+	} else if currentQuestionType == util.SimpleGradesQuestions {
+		if currentFunctionType == jsonToJson {
+			var actualAnswer util.Student
+
+			if err := c.BindJSON(&actualAnswer); err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+			}
+
+			log.Println("the submitted answer: ", actualAnswer)
+			log.Println("the answer we want: ", gradesAnswerData)
+
+			diff := deep.Equal(actualAnswer, gradesAnswerData)
+			if diff == nil {
+				log.Println("you found the student!")
+				generateNextQuestionAnswer()
+			} else {
+				log.Println("didn't find the student")
 			}
 		}
 	} else {
