@@ -350,6 +350,16 @@ func GenerateRandomBoolean() bool {
 	return rand.Intn(2) == 1
 }
 
+func GetAverageOfInts(a []int) int {
+	var total int = 0
+
+	for _, value := range a {
+		total += value
+	}
+
+	return total / len(a)
+}
+
 // apparently we can't use greater than with generics...oh well
 func GetHighestIntValue(a []int) int {
 	max := 0

@@ -304,7 +304,7 @@ func GetHighestResultInOneSubject(jsonInput util.ComplexGradesObject) (util.Stud
 
 	for i := range jsonInput.Students {
 		studentName := jsonInput.Students[i].Name
-		subjectResult := util.GetHighestIntValue(jsonInput.Students[i].Grades.Results[selectedSubject])
+		subjectResult := util.GetAverageOfInts(jsonInput.Students[i].Grades.Results[selectedSubject])
 		subjectResultsArray[studentName] = subjectResult
 	}
 
