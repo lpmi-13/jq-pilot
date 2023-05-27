@@ -87,7 +87,7 @@ var PossibleLocations = []string{
 
 var PossibleSubjects = []string{"math", "art", "history"}
 
-// searches for an ID in an array and returns true if found
+// searches for a value in an array and returns true if found
 func ContainsElement[T comparable](s []T, id T) bool {
 	for _, v := range s {
 		if v == id {
@@ -96,6 +96,32 @@ func ContainsElement[T comparable](s []T, id T) bool {
 	}
 
 	return false
+}
+
+// there are a lot of places where we want "3 random student names" or "4 random items", and
+// it would be nice to abstract that to a function...might be we only need to do this with strings
+func GetNRandomValuesFromArray[T comparable](a []T, howMany int) []T {
+	rand.Seed(time.Now().UnixNano())
+
+	var arrayItems []T
+
+	var randomIndex int
+
+	for i := 0; i < howMany; i++ {
+		log.Printf("started iteration %v", i)
+
+		for {
+			randomIndex = rand.Intn(len(a))
+
+			if !ContainsElement(arrayItems, a[randomIndex]) {
+				break
+			}
+		}
+
+		arrayItems = append(arrayItems, a[randomIndex])
+	}
+
+	return arrayItems
 }
 
 // we generate an array of floats because that's what we need to conform with expectations
@@ -169,19 +195,27 @@ func generateGradeResults() []int {
 }
 
 func GenerateComplexGradesObject() ComplexGradesObject {
-	// this deeply nested map stuff is wild, but fun
+	rand.Seed(time.Now().UnixNano())
+
+	// just hardcode to always have 3
+	var numberOfStudents int = 3
+
+	studentNames := GetNRandomValuesFromArray(PossibleNames, numberOfStudents)
+
+	var studentGradesArray []Student
+
+	for i := 0; i < len(studentNames); i++ {
+		studentGradesArray = append(studentGradesArray, Student{
+			Name: studentNames[i], Grades: Grades{
+				Results: map[string][]int{
+					"art": generateGradeResults(), "math": generateGradeResults(), "history": generateGradeResults(),
+				},
+			},
+		})
+	}
+
 	return ComplexGradesObject{
-		Students: []Student{
-			{Name: "Joe", Grades: Grades{Results: map[string][]int{
-				"art": generateGradeResults(), "math": generateGradeResults(), "history": generateGradeResults(),
-			}}},
-			{Name: "Susan", Grades: Grades{Results: map[string][]int{
-				"art": generateGradeResults(), "math": generateGradeResults(), "history": generateGradeResults(),
-			}}},
-			{Name: "Cameron", Grades: Grades{Results: map[string][]int{
-				"art": generateGradeResults(), "math": generateGradeResults(), "history": generateGradeResults(),
-			}}},
-		},
+		Students: studentGradesArray,
 	}
 }
 
@@ -261,24 +295,7 @@ func GeneratePurchaseList() []FakePurchase {
 func PickActivities() map[string]string {
 	rand.Seed(time.Now().UnixNano())
 
-	var activitiesArray []string
-
-	totalActivities := len(possibleActivities)
-
-	// hardcoded because that's how many days in the week
-	for i := 0; i < 7; i++ {
-		var randomActivitiesIndex int
-
-		for {
-			randomActivitiesIndex = rand.Intn(totalActivities)
-
-			if !ContainsElement(activitiesArray, possibleActivities[randomActivitiesIndex]) {
-				break
-			}
-		}
-
-		activitiesArray = append(activitiesArray, possibleActivities[randomActivitiesIndex])
-	}
+	activitiesArray := GetNRandomValuesFromArray(possibleActivities, 7)
 
 	activitiesBase := make(map[string]string)
 
@@ -297,33 +314,12 @@ func PickActivities() map[string]string {
 }
 
 func PickFavoriteColors() []string {
-	totalColors := 10
-
 	rand.Seed(time.Now().UnixNano())
 
 	// we always want at least one color
 	howManyColorsToPick := rand.Intn(4) + 1
 
-	var colorsArray []string
-
-	// for however many colors get chosen to be picked, loop so we can confirm that
-	// we don't add the same color twice
-	// ...on the other hand, sometimes, we DO want duplicate values for things, so
-	// maybe we'll end up with a more general function that takes values and either
-	// returns one with only unique values (like here), or one that's totally random
-	// (possibly powered by a bounded set using faker or something)
-	for i := 0; i < howManyColorsToPick; i++ {
-		var randomColorIndex int
-
-		for {
-			randomColorIndex = rand.Intn(totalColors)
-			if !ContainsElement(colorsArray, possibleColors[randomColorIndex]) {
-				break
-			}
-		}
-
-		colorsArray = append(colorsArray, possibleColors[randomColorIndex])
-	}
+	colorsArray := GetNRandomValuesFromArray(possibleColors, howManyColorsToPick)
 
 	return colorsArray
 }

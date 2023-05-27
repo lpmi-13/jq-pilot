@@ -167,12 +167,6 @@ func GetAllArrayStringValues(jsonInput PureJsonArrayPurchases) ([]string, string
 	rand.Seed(time.Now().UnixNano())
 
 	// just grab the currency for now...this is nasty
-
-	// keysToGrabArrayValues := []string{"purchaseID", "purchaseCurrency"}
-
-	// totalKeys := len(keysToGrabArrayValues)
-	// keyToGrab := rand.Intn(totalKeys)
-	// keyToMatch := keysToGrabArrayValues[keyToGrab]
 	valuesArray := []string{}
 
 	nestedPurchases := jsonInput["purchases"]
@@ -190,11 +184,6 @@ func GetAllArrayStringValues(jsonInput PureJsonArrayPurchases) ([]string, string
 func GetAllArrayIntValues(jsonInput PureJsonArrayPurchases) ([]int, string) {
 	rand.Seed(time.Now().UnixNano())
 
-	// keysToGrabArrayValues := []string{"purchaseCode"}
-
-	// totalKeys := len(keysToGrabArrayValues)
-	// keyToGrab := rand.Intn(totalKeys)
-	// keyToMatch := keysToGrabArrayValues[keyToGrab]
 	valuesArray := []int{}
 
 	// I feel bad about this, and you should too
@@ -253,7 +242,7 @@ func GetFilteredByPurchasePrice(jsonInput PureJsonArrayPurchases) ([]util.FakePu
 	if filterForHigher {
 		promptString = fmt.Sprintf("find all purchases with a price above: %.2f", differenceBetweenMinMax)
 	} else {
-		promptString = fmt.Sprintf("find all purchases with a price below %.2f", differenceBetweenMinMax)
+		promptString = fmt.Sprintf("find all purchases with a price below: %.2f", differenceBetweenMinMax)
 	}
 
 	return copiedArray, promptString

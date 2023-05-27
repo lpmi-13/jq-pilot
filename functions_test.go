@@ -76,3 +76,14 @@ func TestUniqueKeepsOnlyUniques(t *testing.T) {
 		t.Error("didn't keep all the unique values")
 	}
 }
+
+func TestGetNRandomValuesFromArray(t *testing.T) {
+	testArray := []string{"this", "that", "the other"}
+	expected := 2
+	randomValues := util.GetNRandomValuesFromArray(testArray, expected)
+	actual := len(randomValues)
+
+	if expected := 2; expected != actual {
+		t.Error("didn't return the number of values we expected")
+	}
+}
