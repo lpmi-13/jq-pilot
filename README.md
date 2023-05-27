@@ -4,6 +4,8 @@ Inspired by the `jq` wizardry of @csibar and @thomas-franklin, I decided I neede
 
 live at https://jkew.party
 
+> but also, since https://jkew.party is currently hosted on railway, their free tier runs out after 21 days, so if it's after the 21st of the month, check it out at https://jq-pilot.fly.dev
+
 ## The exercises
 
 based on: https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4
@@ -318,11 +320,3 @@ max/min value.
 > this is also done.
 
 3. Third step is to start adding different types of activities to cover all the common use cases for JQ
-
-```
-
-```
-
-```
-
-```
