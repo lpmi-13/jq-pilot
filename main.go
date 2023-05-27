@@ -77,9 +77,15 @@ type JsonToIntLotteryQuestion struct {
 	Prompt   string                            `json:"prompt"`
 }
 
-type JsonToJsonGradesQuestion struct {
+type JsonToIntGradesQuestion struct {
 	Question util.ComplexGradesObject `json:"question"`
 	Answer   int                      `json:"answer"`
+	Prompt   string                   `json:"prompt"`
+}
+
+type JsonToJsonGradesQuestion struct {
+	Question util.ComplexGradesObject `json:"question"`
+	Answer   []util.SimplerStudent    `json:"answer"`
 	Prompt   string                   `json:"prompt"`
 }
 
@@ -102,7 +108,7 @@ var (
 		jsonToJson, jsonToIntArray, jsonToInt,
 	}
 	gradesFunctionTypesToCall = []string{
-		jsonToInt,
+		jsonToInt, jsonToJson,
 	}
 	delay                         = 500
 	totalJsonToJsonFunctions      = 3
@@ -124,6 +130,7 @@ var (
 	lotteryAnswerDataJson         util.FakeLotteryPick
 	gradesQuestionData            util.ComplexGradesObject
 	gradesAnswerDataInt           int
+	gradesAnswerDataJson          []util.SimplerStudent
 	prompt                        = "please do stuff!"
 )
 
@@ -287,11 +294,19 @@ func main() {
 					}
 				} else if currentQuestionType == util.SimpleGradesQuestions {
 					if currentFunctionType == jsonToInt {
-						mixedResponse = JsonToJsonGradesQuestion{
+						mixedResponse = JsonToIntGradesQuestion{
 							Question: gradesQuestionData,
 							Answer:   gradesAnswerDataInt,
 							Prompt:   prompt,
 						}
+					} else if currentFunctionType == jsonToJson {
+						mixedResponse = JsonToJsonGradesQuestion{
+							Question: gradesQuestionData,
+							Answer:   gradesAnswerDataJson,
+							Prompt:   prompt,
+						}
+					} else {
+						log.Fatal("no obvious function type")
 					}
 				} else {
 					log.Fatal("couldn't get question type")
@@ -512,6 +527,20 @@ func generateNextQuestionAnswer() {
 		}
 	case util.SimpleGradesQuestions:
 		switch currentFunctionType {
+		case jsonToJson:
+			var jsonToJsonFunction func(util.ComplexGradesObject) ([]util.SimplerStudent, string)
+
+			functionToCall := 0
+
+			switch functionToCall {
+			case 0:
+				jsonToJsonFunction = transforms.GetHighestScoreForEachSubject
+			default:
+				log.Fatal("big bad problem")
+			}
+
+			gradesQuestionData = generateGradesQuestionData()
+			gradesAnswerDataJson, prompt = jsonToJsonFunction(gradesQuestionData)
 		case jsonToInt:
 			var jsonToIntFunction func(util.ComplexGradesObject) (int, string)
 
@@ -694,6 +723,25 @@ func getAnswer(c *gin.Context) {
 			} else {
 				log.Println("didn't find the student")
 			}
+		} else if currentFunctionType == jsonToJson {
+			var actualAnswer []util.SimplerStudent
+
+			if err := c.BindJSON(&actualAnswer); err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+			}
+
+			log.Println("we got: ", actualAnswer)
+			log.Println("we want: ", gradesAnswerDataJson)
+
+			diff := deep.Equal(actualAnswer, gradesAnswerDataJson)
+			if diff == nil {
+				log.Println("you found the highest grades in each subject")
+				generateNextQuestionAnswer()
+			} else {
+				log.Println("still some munging to be done...")
+			}
+		} else {
+			log.Println("this function fell through")
 		}
 	} else {
 		log.Println("No current function type...sad day")

@@ -359,3 +359,21 @@ func GetHighestScoreForPersonInSubject(jsonInput util.ComplexGradesObject) (int,
 
 	return highestGrade, fmt.Sprintf("get the highest %s grade for %s", randomSubject, selectedStudentName)
 }
+
+func GetHighestScoreForEachSubject(jsonInput util.ComplexGradesObject) ([]util.SimplerStudent, string) {
+	studentArray := make([]util.SimplerStudent, len(jsonInput.Students))
+
+	// would be nicer to be agnostic about key names here, but we can clean that up later
+	for i := range studentArray {
+		studentArray[i].Name = jsonInput.Students[i].Name
+		intermediateGrades := jsonInput.Students[i].Grades.Results
+		artResult := util.GetHighestIntValue(intermediateGrades["art"])
+		mathResults := util.GetHighestIntValue(intermediateGrades["math"])
+		historyResults := util.GetHighestIntValue(intermediateGrades["history"])
+		studentArray[i].Grades = util.SimplerGrades{
+			Results: map[string]int{"art": artResult, "history": historyResults, "math": mathResults},
+		}
+	}
+
+	return studentArray, "get the top scores for each student in each subject"
+}

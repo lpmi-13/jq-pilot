@@ -178,6 +178,20 @@ type ComplexGradesObject struct {
 	Students []Student `json:"students"`
 }
 
+// the three structs below are crap, but will work for now
+type SimplerGrades struct {
+	Results map[string]int `json:"results"`
+}
+
+type SimplerStudent struct {
+	Name   string        `json:"name"`
+	Grades SimplerGrades `json:"grades"`
+}
+
+type SimplerGradesObject struct {
+	Students []SimplerStudent `json:"students"`
+}
+
 func generateGradeResults() []int {
 	var scores []int
 
