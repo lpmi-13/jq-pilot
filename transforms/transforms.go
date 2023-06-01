@@ -297,8 +297,7 @@ func PickAWinner(jsonInput PureJsonArrayLottery) (util.FakeLotteryPick, string) 
 // it's very possible that we'll want this to be a general function to get both the highest and lowest scorers
 // but we can just get the highest result version working for now
 
-// this particular function created a transform that I couldn't figure out how to do with jq,
-// so I'm just not gonna use it til I hear back from either Thomas or Rudi Tootie Fresh and Fruity
+// I continue to bow in respect to Senseis Thomas Franklin and Rudi Tooty Fresh and Fruity for their jq skillz
 func GetHighestResultInOneSubject(jsonInput util.ComplexGradesObject) (util.Student, string) {
 	rand.Seed(time.Now().UnixNano())
 

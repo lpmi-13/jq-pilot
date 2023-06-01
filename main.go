@@ -89,8 +89,16 @@ type JsonToJsonGradesQuestion struct {
 	Prompt   string                   `json:"prompt"`
 }
 
+type JsonToRidicJsonGradesQuestion struct {
+	Question util.ComplexGradesObject `json:"question"`
+	Answer   util.Student             `json:"answer"`
+	Prompt   string                   `json:"prompt"`
+}
+
 const (
-	jsonToJson        = "jsonToJson"
+	jsonToJson = "jsonToJson"
+	// this just commemorates when I solved a particularly tricky jq slicing problem
+	jsonToRidicJson   = "jsonToRidicJson"
 	jsonToString      = "jsonToString"
 	jsonToInt         = "jsonToInt"
 	jsonToStringArray = "jsonToStringArray"
@@ -108,7 +116,7 @@ var (
 		jsonToJson, jsonToIntArray, jsonToInt,
 	}
 	gradesFunctionTypesToCall = []string{
-		jsonToInt, jsonToJson,
+		jsonToInt, jsonToJson, jsonToRidicJson,
 	}
 	delay                         = 500
 	totalJsonToJsonFunctions      = 3
@@ -131,6 +139,7 @@ var (
 	gradesQuestionData            util.ComplexGradesObject
 	gradesAnswerDataInt           int
 	gradesAnswerDataJson          []util.SimplerStudent
+	gradesAnswerDataRidicJson     util.Student
 	prompt                        = "please do stuff!"
 )
 
@@ -299,6 +308,12 @@ func main() {
 							Answer:   gradesAnswerDataInt,
 							Prompt:   prompt,
 						}
+					} else if currentFunctionType == jsonToRidicJson {
+						mixedResponse = JsonToRidicJsonGradesQuestion{
+							Question: gradesQuestionData,
+							Answer:   gradesAnswerDataRidicJson,
+							Prompt:   prompt,
+						}
 					} else if currentFunctionType == jsonToJson {
 						mixedResponse = JsonToJsonGradesQuestion{
 							Question: gradesQuestionData,
@@ -363,7 +378,8 @@ func getQuestion(c *gin.Context) {
 func generateNextQuestionAnswer() {
 	// we need to know what type of question we want so that we can use that to determine the subset
 	// of function types to use to create the activity
-	currentQuestionType = util.GeneratePossibleValue(util.PossibleQuestionTypes)
+	// currentQuestionType = util.GeneratePossibleValue(util.PossibleQuestionTypes)
+	currentQuestionType = util.SimpleGradesQuestions
 
 	// there's probably a better way to structure this hierarchy, but we'll just go with
 	// something dumb and verbose for now
@@ -541,6 +557,20 @@ func generateNextQuestionAnswer() {
 
 			gradesQuestionData = generateGradesQuestionData()
 			gradesAnswerDataJson, prompt = jsonToJsonFunction(gradesQuestionData)
+		case jsonToRidicJson:
+			var jsonToRidicJsonFunction func(util.ComplexGradesObject) (util.Student, string)
+
+			functionToCall := 0
+
+			switch functionToCall {
+			case 0:
+				jsonToRidicJsonFunction = transforms.GetHighestResultInOneSubject
+			default:
+				log.Fatal("couldn't create some ridic exercise")
+			}
+
+			gradesQuestionData = generateGradesQuestionData()
+			gradesAnswerDataRidicJson, prompt = jsonToRidicJsonFunction(gradesQuestionData)
 		case jsonToInt:
 			var jsonToIntFunction func(util.ComplexGradesObject) (int, string)
 
@@ -723,15 +753,26 @@ func getAnswer(c *gin.Context) {
 			} else {
 				log.Println("didn't find the student")
 			}
+		} else if currentFunctionType == jsonToRidicJson {
+			var actualAnswer util.Student
+
+			if err := c.BindJSON(&actualAnswer); err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+			}
+
+			diff := deep.Equal(actualAnswer, gradesAnswerDataRidicJson)
+			if diff == nil {
+				log.Println("solved the ridic touch one, nice work!")
+				generateNextQuestionAnswer()
+			} else {
+				log.Println("work on your selects after variable assignment")
+			}
 		} else if currentFunctionType == jsonToJson {
 			var actualAnswer []util.SimplerStudent
 
 			if err := c.BindJSON(&actualAnswer); err != nil {
 				c.AbortWithStatus(http.StatusBadRequest)
 			}
-
-			log.Println("we got: ", actualAnswer)
-			log.Println("we want: ", gradesAnswerDataJson)
 
 			diff := deep.Equal(actualAnswer, gradesAnswerDataJson)
 			if diff == nil {
