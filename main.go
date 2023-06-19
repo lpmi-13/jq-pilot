@@ -75,6 +75,12 @@ type JsonToIntLotteryQuestion struct {
 	Prompt   string                            `json:"prompt"`
 }
 
+type JsonToJsonFreqDistLotteryQuestion struct {
+	Question map[string][]util.FakeLotteryPick `json:"question"`
+	Answer   map[string]int                    `json:"answer"`
+	Prompt   string
+}
+
 type JsonToIntGradesQuestion struct {
 	Question util.ComplexGradesObject `json:"question"`
 	Answer   int                      `json:"answer"`
@@ -101,6 +107,7 @@ const (
 	jsonToInt         = "jsonToInt"
 	jsonToStringArray = "jsonToStringArray"
 	jsonToIntArray    = "jsonToIntArray"
+	jsonToDict        = "jsonToDict"
 )
 
 var (
@@ -134,6 +141,7 @@ var (
 	lotteryAnswerDataIntArray     []int
 	lotteryAnswerDataInt          int
 	lotteryAnswerDataJson         util.FakeLotteryPick
+	lotteryAnswerFreqDist         map[string]int
 	gradesQuestionData            util.ComplexGradesObject
 	gradesAnswerDataInt           int
 	gradesAnswerDataJson          []util.SimplerStudent
@@ -286,6 +294,12 @@ func main() {
 							Answer:   lotteryAnswerDataJson,
 							Prompt:   prompt,
 						}
+					} else if currentFunctionType == jsonToDict {
+						mixedResponse = JsonToJsonFreqDistLotteryQuestion{
+							Question: lotteryQuestionData,
+							Answer:   lotteryAnswerFreqDist,
+							Prompt:   prompt,
+						}
 					} else if currentFunctionType == jsonToIntArray {
 						mixedResponse = JsonToIntArrayLotteryQuestion{
 							Question: lotteryQuestionData,
@@ -410,6 +424,19 @@ func generateNextQuestionAnswer() {
 
 			lotteryQuestionData = generateLotteryPickQuestionData()
 			lotteryAnswerDataJson, prompt = jsonToJsonFunction(lotteryQuestionData)
+
+		case jsonToDict:
+			var jsonToFreqDistFunction func(transforms.PureJsonArrayLottery) (map[string]int, string)
+
+			functionToCall := 0
+
+			switch functionToCall {
+			case 0:
+				jsonToFreqDistFunction = transforms.GetLotteryPickFrequencyDistribution
+			}
+
+			lotteryQuestionData = generateLotteryPickQuestionData()
+			lotteryAnswerFreqDist, prompt = jsonToFreqDistFunction(lotteryQuestionData)
 		case jsonToIntArray:
 			var jsonToIntArrayFunction func(transforms.PureJsonArrayLottery) ([]int, string)
 
@@ -631,6 +658,8 @@ func getAnswer(c *gin.Context) {
 	} else if currentQuestionType == util.SimpleLotteryQuestions {
 		if currentFunctionType == jsonToJson {
 			processAnswer[util.FakeLotteryPick](c, lotteryAnswerDataJson)
+		} else if currentFunctionType == jsonToDict {
+			processAnswer[map[string]int](c, lotteryAnswerFreqDist)
 		} else if currentFunctionType == jsonToIntArray {
 			processAnswer[[]int](c, lotteryAnswerDataIntArray)
 		} else if currentFunctionType == jsonToInt {

@@ -297,7 +297,22 @@ func PickAWinner(jsonInput PureJsonArrayLottery) (util.FakeLotteryPick, string) 
 // {"a":2, "b":1}
 // from https://andrew.gibiansky.com/blog/command-line/jq-primer/
 func GetLotteryPickFrequencyDistribution(jsonInput PureJsonArrayLottery) (map[string]int, string) {
-	return map[string]int{"4": 2, "1": 5, "8": 1}, "find out how often each number was chosen"
+	var totalNumbers []int
+
+	for i := range jsonInput["lotteryPicks"] {
+		numbers := jsonInput["lotteryPicks"][i].Numbers
+		for number := range numbers {
+			totalNumbers = append(totalNumbers, number)
+		}
+	}
+
+	numbersDict := make(map[string]int)
+
+	for _, number := range totalNumbers {
+		numbersDict[fmt.Sprint(number)] = numbersDict[fmt.Sprint(number)] + 1
+	}
+
+	return numbersDict, "find out how often each number was chosen"
 }
 
 // these are functions for working with the grades data
