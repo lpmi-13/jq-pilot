@@ -312,6 +312,42 @@ max/min value.
 }
 ```
 
+for a bit of object transformations, we can have something similar to the tags object returned from AWS APIs, like turning:
+
+```
+[
+  {
+    "label": "house",
+    "value": "lloyds pharmacy"
+  },
+  {
+    "label": "house_number",
+    "value": "105"
+  },
+  {
+    "label": "road",
+    "value": "church road"
+  },
+  {
+    "label": "postcode",
+    "value": "bn3 2af"
+  }
+]
+```
+
+into...
+
+```
+{
+  "house": "lloyds pharmacy",
+  "house_number": "105",
+  "road": "church road",
+  "postcode": "bn3 2af"
+}
+```
+
+via some old `jq 'map({ (.label): .value }) | add '` magic (to be fair, that might be the only thing we practice, since it's too cool to not practice...maybe also do something with both `to_entries`, `with_entries`, and `from_entries`, cause I have no idea what they do)
+
 ## Iterations
 
 1. First MVP is just three hardcoded json problems that can be worked through in sequence.
