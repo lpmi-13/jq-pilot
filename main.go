@@ -393,6 +393,8 @@ func generateNextQuestionAnswer() {
 		log.Fatal("this blew up because we couldn't determine the currentFunctionType")
 	}
 
+	log.Println("the function type is:", currentFunctionType)
+
 	switch currentQuestionType {
 	case util.SimpleLotteryQuestions:
 		switch currentFunctionType {
@@ -592,7 +594,7 @@ func generateNextQuestionAnswer() {
 	}
 }
 
-func processAnswer[T any](context *gin.Context, expectedAnswer T) bool {
+func processAnswer[T any](context *gin.Context, expectedAnswer T) {
 	var actualAnswer T
 	if err := context.BindJSON(&actualAnswer); err != nil {
 		context.AbortWithStatus(http.StatusBadRequest)
@@ -600,134 +602,45 @@ func processAnswer[T any](context *gin.Context, expectedAnswer T) bool {
 
 	diff := deep.Equal(actualAnswer, expectedAnswer)
 
-	return diff == nil
+	if diff == nil {
+		log.Println("correct")
+		generateNextQuestionAnswer()
+	} else {
+		log.Println("wrong answer, please try again")
+	}
 }
 
 func getAnswer(c *gin.Context) {
 	if currentQuestionType == util.SimplePurchaseQuestions {
 		// we keep the current function type in state so we know how to compare the answer
 		if currentFunctionType == jsonToStringArray {
-			diff := processAnswer[[]string](c, purchaseAnswerDataStringArray)
-
-			if !diff {
-				log.Println("ye olde string slice is all good!")
-				generateNextQuestionAnswer()
-			} else {
-				log.Println("wrong answer, please try again")
-			}
+			processAnswer[[]string](c, purchaseAnswerDataStringArray)
 		} else if currentFunctionType == jsonToIntArray {
-			diff := processAnswer[[]int](c, purchaseAnswerDataIntArray)
-
-			if diff {
-				log.Println("get that int slice!")
-				generateNextQuestionAnswer()
-			} else {
-				log.Println("wrong answer, please try again")
-			}
+			processAnswer[[]int](c, purchaseAnswerDataIntArray)
 		} else if currentFunctionType == jsonToJson {
-			diff := processAnswer[[]util.FakePurchase](c, purchaseAnswerDataJsonArray)
-
-			if diff {
-				log.Println("nice work, all filtered!")
-				generateNextQuestionAnswer()
-			} else {
-				log.Println("not quite...try again")
-			}
+			processAnswer[[]util.FakePurchase](c, purchaseAnswerDataJsonArray)
 		}
 	} else if currentQuestionType == util.SimplePeopleQuestions {
 		if currentFunctionType == jsonToString {
-			diff := processAnswer[string](c, personAnswerDataString)
-
-			if diff {
-				log.Println("you got it!")
-				generateNextQuestionAnswer()
-			} else {
-				log.Println("wrong answer, please try again")
-			}
+			processAnswer[string](c, personAnswerDataString)
 		} else if currentFunctionType == jsonToInt {
-			diff := processAnswer[int](c, personAnswerDataInt)
-
-			if diff {
-				log.Println("get that int for the people!")
-				generateNextQuestionAnswer()
-			} else {
-				log.Println("wrong answer, please try again")
-			}
+			processAnswer[int](c, personAnswerDataInt)
 		} else if currentFunctionType == jsonToJson {
-			diff := processAnswer[transforms.PureJson](c, personAnswerDataJson)
-
-			if diff {
-				log.Println("noice, bruh!")
-				generateNextQuestionAnswer()
-			} else {
-				log.Println("wrong answer, please try again")
-			}
+			processAnswer[transforms.PureJson](c, personAnswerDataJson)
 		}
 	} else if currentQuestionType == util.SimpleLotteryQuestions {
-		// these are the exact same implementation as above, so BE BETTER!
 		if currentFunctionType == jsonToJson {
-			diff := processAnswer[util.FakeLotteryPick](c, lotteryAnswerDataJson)
-
-			if diff {
-				log.Println("you found the winner!")
-				generateNextQuestionAnswer()
-			} else {
-				log.Print("not the winner we're looking for...")
-			}
+			processAnswer[util.FakeLotteryPick](c, lotteryAnswerDataJson)
 		} else if currentFunctionType == jsonToIntArray {
-			diff := processAnswer[[]int](c, lotteryAnswerDataIntArray)
-
-			if diff {
-				log.Println("get that int slice of lottery picks!")
-				generateNextQuestionAnswer()
-			} else {
-				log.Println("wrong answer, please try again")
-			}
+			processAnswer[[]int](c, lotteryAnswerDataIntArray)
 		} else if currentFunctionType == jsonToInt {
-			diff := processAnswer[int](c, lotteryAnswerDataInt)
-
-			if diff {
-				log.Println("get that int for total lottery picks!")
-				generateNextQuestionAnswer()
-			} else {
-				log.Println("wrong answer, please try again")
-			}
+			processAnswer[int](c, lotteryAnswerDataInt)
 		}
 	} else if currentQuestionType == util.SimpleGradesQuestions {
 		if currentFunctionType == jsonToInt {
-			diff := processAnswer[int](c, gradesAnswerDataInt)
-
-			if diff {
-				log.Println("you found the student!")
-				generateNextQuestionAnswer()
-			} else {
-				log.Println("didn't find the student")
-			}
-		} else if currentFunctionType == jsonToRidicJson {
-			var actualAnswer util.Student
-
-			if err := c.BindJSON(&actualAnswer); err != nil {
-				c.AbortWithStatus(http.StatusBadRequest)
-			}
-
-			diff := deep.Equal(actualAnswer, gradesAnswerDataRidicJson)
-			if diff == nil {
-				log.Println("solved the ridic touch one, nice work!")
-				generateNextQuestionAnswer()
-			} else {
-				log.Println("work on your selects after variable assignment")
-			}
+			processAnswer[int](c, gradesAnswerDataInt)
 		} else if currentFunctionType == jsonToJson {
-			diff := processAnswer[[]util.SimplerStudent](c, gradesAnswerDataJson)
-
-			if diff {
-				log.Println("you found the highest grades in each subject")
-				generateNextQuestionAnswer()
-			} else {
-				log.Println("still some munging to be done...")
-			}
-		} else {
-			log.Println("this function fell through")
+			processAnswer[[]util.SimplerStudent](c, gradesAnswerDataJson)
 		}
 	} else {
 		log.Println("No current function type...sad day")
