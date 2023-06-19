@@ -3,11 +3,9 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"io"
 	"log"
 	"math/rand"
 	"net/http"
-	"strconv"
 	"time"
 
 	"jq-pilot/transforms"
@@ -594,47 +592,42 @@ func generateNextQuestionAnswer() {
 	}
 }
 
+func processAnswer[T any](context *gin.Context, expectedAnswer T) bool {
+	var actualAnswer T
+	if err := context.BindJSON(&actualAnswer); err != nil {
+		context.AbortWithStatus(http.StatusBadRequest)
+	}
+
+	diff := deep.Equal(actualAnswer, expectedAnswer)
+
+	return diff == nil
+}
+
 func getAnswer(c *gin.Context) {
 	if currentQuestionType == util.SimplePurchaseQuestions {
 		// we keep the current function type in state so we know how to compare the answer
 		if currentFunctionType == jsonToStringArray {
-			var actualAnswer []string
+			diff := processAnswer[[]string](c, purchaseAnswerDataStringArray)
 
-			if err := c.BindJSON(&actualAnswer); err != nil {
-				c.AbortWithStatus(http.StatusBadRequest)
-			}
-
-			diff := deep.Equal(actualAnswer, purchaseAnswerDataStringArray)
-
-			if diff == nil {
+			if !diff {
 				log.Println("ye olde string slice is all good!")
 				generateNextQuestionAnswer()
 			} else {
 				log.Println("wrong answer, please try again")
 			}
 		} else if currentFunctionType == jsonToIntArray {
-			var actualAnswer []int
+			diff := processAnswer[[]int](c, purchaseAnswerDataIntArray)
 
-			if err := c.BindJSON(&actualAnswer); err != nil {
-				c.AbortWithStatus(http.StatusBadRequest)
-			}
-
-			diff := deep.Equal(actualAnswer, purchaseAnswerDataIntArray)
-			if diff == nil {
+			if diff {
 				log.Println("get that int slice!")
 				generateNextQuestionAnswer()
 			} else {
 				log.Println("wrong answer, please try again")
 			}
 		} else if currentFunctionType == jsonToJson {
-			var actualAnswer []util.FakePurchase
+			diff := processAnswer[[]util.FakePurchase](c, purchaseAnswerDataJsonArray)
 
-			if err := c.BindJSON(&actualAnswer); err != nil {
-				c.AbortWithStatus(http.StatusBadRequest)
-			}
-
-			diff := deep.Equal(actualAnswer, purchaseAnswerDataJsonArray)
-			if diff == nil {
+			if diff {
 				log.Println("nice work, all filtered!")
 				generateNextQuestionAnswer()
 			} else {
@@ -643,44 +636,27 @@ func getAnswer(c *gin.Context) {
 		}
 	} else if currentQuestionType == util.SimplePeopleQuestions {
 		if currentFunctionType == jsonToString {
-			response, err := io.ReadAll(c.Request.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
+			diff := processAnswer[string](c, personAnswerDataString)
 
-			if string(response) == personAnswerDataString {
+			if diff {
 				log.Println("you got it!")
 				generateNextQuestionAnswer()
 			} else {
 				log.Println("wrong answer, please try again")
 			}
 		} else if currentFunctionType == jsonToInt {
-			response, err := io.ReadAll(c.Request.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
+			diff := processAnswer[int](c, personAnswerDataInt)
 
-			result, err := strconv.Atoi(string(response))
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			if result == personAnswerDataInt {
+			if diff {
 				log.Println("get that int for the people!")
 				generateNextQuestionAnswer()
 			} else {
 				log.Println("wrong answer, please try again")
 			}
 		} else if currentFunctionType == jsonToJson {
-			var actualAnswer transforms.PureJson
+			diff := processAnswer[transforms.PureJson](c, personAnswerDataJson)
 
-			log.Println("got to here")
-			if err := c.BindJSON(&actualAnswer); err != nil {
-				c.AbortWithStatus(http.StatusBadRequest)
-			}
-
-			diff := deep.Equal(actualAnswer, personAnswerDataJson)
-			if diff == nil {
+			if diff {
 				log.Println("noice, bruh!")
 				generateNextQuestionAnswer()
 			} else {
@@ -690,45 +666,27 @@ func getAnswer(c *gin.Context) {
 	} else if currentQuestionType == util.SimpleLotteryQuestions {
 		// these are the exact same implementation as above, so BE BETTER!
 		if currentFunctionType == jsonToJson {
-			var actualAnswer util.FakeLotteryPick
+			diff := processAnswer[util.FakeLotteryPick](c, lotteryAnswerDataJson)
 
-			if err := c.BindJSON(&actualAnswer); err != nil {
-				c.AbortWithStatus(http.StatusBadRequest)
-			}
-
-			diff := deep.Equal(actualAnswer, lotteryAnswerDataJson)
-			if diff == nil {
+			if diff {
 				log.Println("you found the winner!")
 				generateNextQuestionAnswer()
 			} else {
 				log.Print("not the winner we're looking for...")
 			}
 		} else if currentFunctionType == jsonToIntArray {
-			var actualAnswer []int
+			diff := processAnswer[[]int](c, lotteryAnswerDataIntArray)
 
-			if err := c.BindJSON(&actualAnswer); err != nil {
-				c.AbortWithStatus(http.StatusBadRequest)
-			}
-
-			diff := deep.Equal(actualAnswer, lotteryAnswerDataIntArray)
-			if diff == nil {
+			if diff {
 				log.Println("get that int slice of lottery picks!")
 				generateNextQuestionAnswer()
 			} else {
 				log.Println("wrong answer, please try again")
 			}
 		} else if currentFunctionType == jsonToInt {
-			response, err := io.ReadAll(c.Request.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
+			diff := processAnswer[int](c, lotteryAnswerDataInt)
 
-			result, err := strconv.Atoi(string(response))
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			if result == lotteryAnswerDataInt {
+			if diff {
 				log.Println("get that int for total lottery picks!")
 				generateNextQuestionAnswer()
 			} else {
@@ -737,17 +695,9 @@ func getAnswer(c *gin.Context) {
 		}
 	} else if currentQuestionType == util.SimpleGradesQuestions {
 		if currentFunctionType == jsonToInt {
-			response, err := io.ReadAll(c.Request.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
-			// not 100% sure the double conversion is necessary here
-			result, err := strconv.Atoi(string(response))
-			if err != nil {
-				log.Fatal(err)
-			}
+			diff := processAnswer[int](c, gradesAnswerDataInt)
 
-			if result == gradesAnswerDataInt {
+			if diff {
 				log.Println("you found the student!")
 				generateNextQuestionAnswer()
 			} else {
@@ -768,14 +718,9 @@ func getAnswer(c *gin.Context) {
 				log.Println("work on your selects after variable assignment")
 			}
 		} else if currentFunctionType == jsonToJson {
-			var actualAnswer []util.SimplerStudent
+			diff := processAnswer[[]util.SimplerStudent](c, gradesAnswerDataJson)
 
-			if err := c.BindJSON(&actualAnswer); err != nil {
-				c.AbortWithStatus(http.StatusBadRequest)
-			}
-
-			diff := deep.Equal(actualAnswer, gradesAnswerDataJson)
-			if diff == nil {
+			if diff {
 				log.Println("you found the highest grades in each subject")
 				generateNextQuestionAnswer()
 			} else {
