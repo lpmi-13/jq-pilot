@@ -19,84 +19,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-type JsonToJsonQuestion struct {
-	Question map[string]interface{} `json:"question"`
-	Answer   map[string]interface{} `json:"answer"`
-	Prompt   string                 `json:"prompt"`
-}
-
-type JsonToStringQuestion struct {
-	Question map[string]interface{} `json:"question"`
-	Answer   string                 `json:"answer"`
-	Prompt   string                 `json:"prompt"`
-}
-
-type JsonToIntQuestion struct {
-	Question map[string]interface{} `json:"question"`
-	Answer   int                    `json:"answer"`
-	Prompt   string                 `json:"prompt"`
-}
-
-// it's at this point that I feel like I want some generics, so I'll get to implementing
-// that at some point (https://itnext.io/how-to-use-golang-generics-with-structs-8cabc9353d75)
-type JsonToIntArrayQuestion struct {
-	Question map[string][]util.FakePurchase `json:"question"`
-	Answer   []int                          `json:"answer"`
-	Prompt   string                         `json:"prompt"`
-}
-
-type JsonToStringArrayQuestion struct {
-	Question map[string][]util.FakePurchase `json:"question"`
-	Answer   []string                       `json:"answer"`
-	Prompt   string                         `json:"prompt"`
-}
-
-type JsonToJsonArrayQuestion struct {
-	Question map[string][]util.FakePurchase `json:"question"`
-	Answer   []util.FakePurchase            `json:"answer"`
-	Prompt   string                         `json:"prompt"`
-}
-
-type JsonToJsonLotteryQuestion struct {
-	Question map[string][]util.FakeLotteryPick `json:"question"`
-	Answer   util.FakeLotteryPick              `json:"answer"`
-	Prompt   string                            `json:"prompt"`
-}
-
-type JsonToIntArrayLotteryQuestion struct {
-	Question map[string][]util.FakeLotteryPick `json:"question"`
-	Answer   []int                             `json:"answer"`
-	Prompt   string                            `json:"prompt"`
-}
-
-type JsonToIntLotteryQuestion struct {
-	Question map[string][]util.FakeLotteryPick `json:"question"`
-	Answer   int                               `json:"answer"`
-	Prompt   string                            `json:"prompt"`
-}
-
-type JsonToJsonFreqDistLotteryQuestion struct {
-	Question map[string][]util.FakeLotteryPick `json:"question"`
-	Answer   map[string]int                    `json:"answer"`
-	Prompt   string
-}
-
-type JsonToIntGradesQuestion struct {
-	Question util.ComplexGradesObject `json:"question"`
-	Answer   int                      `json:"answer"`
-	Prompt   string                   `json:"prompt"`
-}
-
-type JsonToJsonGradesQuestion struct {
-	Question util.ComplexGradesObject `json:"question"`
-	Answer   []util.SimplerStudent    `json:"answer"`
-	Prompt   string                   `json:"prompt"`
-}
-
-type JsonToRidicJsonGradesQuestion struct {
-	Question util.ComplexGradesObject `json:"question"`
-	Answer   util.Student             `json:"answer"`
-	Prompt   string                   `json:"prompt"`
+// these generics are hashtag delicious, and I'm here for it
+type JsonQuestion[T any, V any] struct {
+	Question T      `json:"question"`
+	Answer   V      `json:"answer"`
+	Prompt   string `json:"prompt"`
 }
 
 const (
@@ -247,19 +174,19 @@ func main() {
 				var mixedResponse interface{}
 				if currentQuestionType == util.SimplePeopleQuestions {
 					if currentFunctionType == jsonToJson {
-						mixedResponse = JsonToJsonQuestion{
+						mixedResponse = JsonQuestion[map[string]interface{}, map[string]interface{}]{
 							Question: personQuestionData,
 							Answer:   personAnswerDataJson,
 							Prompt:   prompt,
 						}
 					} else if currentFunctionType == jsonToString {
-						mixedResponse = JsonToStringQuestion{
+						mixedResponse = JsonQuestion[map[string]interface{}, string]{
 							Question: personQuestionData,
 							Answer:   personAnswerDataString,
 							Prompt:   prompt,
 						}
 					} else if currentFunctionType == jsonToInt {
-						mixedResponse = JsonToIntQuestion{
+						mixedResponse = JsonQuestion[map[string]interface{}, int]{
 							Question: personQuestionData,
 							Answer:   personAnswerDataInt,
 							Prompt:   prompt,
@@ -269,19 +196,19 @@ func main() {
 					}
 				} else if currentQuestionType == util.SimplePurchaseQuestions {
 					if currentFunctionType == jsonToIntArray {
-						mixedResponse = JsonToIntArrayQuestion{
+						mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []int]{
 							Question: purchaseQuestionData,
 							Answer:   purchaseAnswerDataIntArray,
 							Prompt:   prompt,
 						}
 					} else if currentFunctionType == jsonToStringArray {
-						mixedResponse = JsonToStringArrayQuestion{
+						mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []string]{
 							Question: purchaseQuestionData,
 							Answer:   purchaseAnswerDataStringArray,
 							Prompt:   prompt,
 						}
 					} else if currentFunctionType == jsonToJson {
-						mixedResponse = JsonToJsonArrayQuestion{
+						mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []util.FakePurchase]{
 							Question: purchaseQuestionData,
 							Answer:   purchaseAnswerDataJsonArray,
 							Prompt:   prompt,
@@ -289,25 +216,25 @@ func main() {
 					}
 				} else if currentQuestionType == util.SimpleLotteryQuestions {
 					if currentFunctionType == jsonToJson {
-						mixedResponse = JsonToJsonLotteryQuestion{
+						mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, util.FakeLotteryPick]{
 							Question: lotteryQuestionData,
 							Answer:   lotteryAnswerDataJson,
 							Prompt:   prompt,
 						}
 					} else if currentFunctionType == jsonToDict {
-						mixedResponse = JsonToJsonFreqDistLotteryQuestion{
+						mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, map[string]int]{
 							Question: lotteryQuestionData,
 							Answer:   lotteryAnswerFreqDist,
 							Prompt:   prompt,
 						}
 					} else if currentFunctionType == jsonToIntArray {
-						mixedResponse = JsonToIntArrayLotteryQuestion{
+						mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, []int]{
 							Question: lotteryQuestionData,
 							Answer:   lotteryAnswerDataIntArray,
 							Prompt:   prompt,
 						}
 					} else if currentFunctionType == jsonToInt {
-						mixedResponse = JsonToIntLotteryQuestion{
+						mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, int]{
 							Question: lotteryQuestionData,
 							Answer:   lotteryAnswerDataInt,
 							Prompt:   prompt,
@@ -315,19 +242,19 @@ func main() {
 					}
 				} else if currentQuestionType == util.SimpleGradesQuestions {
 					if currentFunctionType == jsonToInt {
-						mixedResponse = JsonToIntGradesQuestion{
+						mixedResponse = JsonQuestion[util.ComplexGradesObject, int]{
 							Question: gradesQuestionData,
 							Answer:   gradesAnswerDataInt,
 							Prompt:   prompt,
 						}
 					} else if currentFunctionType == jsonToRidicJson {
-						mixedResponse = JsonToRidicJsonGradesQuestion{
+						mixedResponse = JsonQuestion[util.ComplexGradesObject, util.Student]{
 							Question: gradesQuestionData,
 							Answer:   gradesAnswerDataRidicJson,
 							Prompt:   prompt,
 						}
 					} else if currentFunctionType == jsonToJson {
-						mixedResponse = JsonToJsonGradesQuestion{
+						mixedResponse = JsonQuestion[util.ComplexGradesObject, []util.SimplerStudent]{
 							Question: gradesQuestionData,
 							Answer:   gradesAnswerDataJson,
 							Prompt:   prompt,
