@@ -52,8 +52,6 @@ var (
 	}
 	delay                         = 500
 	totalJsonToJsonFunctions      = 3
-	totalJsonToStringFunctions    = 1
-	totalJsonToIntFunctions       = 1
 	currentQuestionType           = util.SimplePeopleQuestions
 	currentFunctionType           string
 	personQuestionData            transforms.PureJson
@@ -338,13 +336,14 @@ func generateNextQuestionAnswer() {
 
 	switch currentQuestionType {
 	case util.SimpleLotteryQuestions:
+		lotteryQuestionData = generateLotteryPickQuestionData()
+
 		switch currentFunctionType {
 		case jsonToJson:
 			var jsonToJsonFunction func(transforms.PureJsonArrayLottery) (util.FakeLotteryPick, string)
 
 			jsonToJsonFunction = transforms.PickAWinner
 
-			lotteryQuestionData = generateLotteryPickQuestionData()
 			lotteryAnswerDataJson, prompt = jsonToJsonFunction(lotteryQuestionData)
 
 		case jsonToDict:
@@ -352,25 +351,23 @@ func generateNextQuestionAnswer() {
 
 			jsonToFreqDistFunction = transforms.GetLotteryPickFrequencyDistribution
 
-			lotteryQuestionData = generateLotteryPickQuestionData()
 			lotteryAnswerFreqDist, prompt = jsonToFreqDistFunction(lotteryQuestionData)
 		case jsonToIntArray:
 			var jsonToIntArrayFunction func(transforms.PureJsonArrayLottery) ([]int, string)
 
 			jsonToIntArrayFunction = transforms.GetAllUniqueArrayIntValues
 
-			lotteryQuestionData = generateLotteryPickQuestionData()
 			lotteryAnswerDataIntArray, prompt = jsonToIntArrayFunction(lotteryQuestionData)
 		case jsonToInt:
 			var jsonToIntFunction func(transforms.PureJsonArrayLottery) (int, string)
 
 			jsonToIntFunction = transforms.GetNumberOfPicks
 
-			lotteryQuestionData = generateLotteryPickQuestionData()
 			lotteryAnswerDataInt, prompt = jsonToIntFunction(lotteryQuestionData)
 		}
 
 	case util.SimplePeopleQuestions:
+		personQuestionData = generatePersonQuestionData()
 		// this should really by something like nextFunctionType, but we can refactor later
 		switch currentFunctionType {
 		// this is where the Simple Person Question exercises are generated
@@ -379,14 +376,12 @@ func generateNextQuestionAnswer() {
 
 			jsonToIntFunction = transforms.GetOneKeyIntValue
 
-			personQuestionData = generatePersonQuestionData()
 			personAnswerDataInt, prompt = jsonToIntFunction(personQuestionData)
 		case jsonToString:
 			var jsonToStringFunction func(transforms.PureJson) (string, string)
 
 			jsonToStringFunction = transforms.GetOneKeyStringValue
 
-			personQuestionData = generatePersonQuestionData()
 			personAnswerDataString, prompt = jsonToStringFunction(personQuestionData)
 
 		case jsonToJson:
@@ -405,12 +400,13 @@ func generateNextQuestionAnswer() {
 				log.Fatal("this blew up because we couldn't match the functionToCall here")
 			}
 
-			personQuestionData = generatePersonQuestionData()
 			personAnswerDataJson, prompt = jsonToJsonFunction(personQuestionData)
 		default:
 			log.Fatal("blew the F up!")
 		}
 	case util.SimplePurchaseQuestions:
+		purchaseQuestionData = generatePurchaseQuestionData()
+
 		switch currentFunctionType {
 		// this is where the Simple Purchase Question exercises are generated
 		case jsonToIntArray:
@@ -418,45 +414,41 @@ func generateNextQuestionAnswer() {
 
 			jsonToIntArrayFunction = transforms.GetAllArrayIntValues
 
-			purchaseQuestionData = generatePurchaseQuestionData()
 			purchaseAnswerDataIntArray, prompt = jsonToIntArrayFunction(purchaseQuestionData)
 		case jsonToStringArray:
 			var jsonToStringArrayFunction func(transforms.PureJsonArrayPurchases) ([]string, string)
 
 			jsonToStringArrayFunction = transforms.GetAllArrayStringValues
 
-			purchaseQuestionData = generatePurchaseQuestionData()
 			purchaseAnswerDataStringArray, prompt = jsonToStringArrayFunction(purchaseQuestionData)
 		case jsonToJson:
 			var jsonToJsonArrayFunction func(transforms.PureJsonArrayPurchases) ([]util.FakePurchase, string)
 
 			jsonToJsonArrayFunction = transforms.GetFilteredByPurchasePrice
 
-			purchaseQuestionData = generatePurchaseQuestionData()
 			purchaseAnswerDataJsonArray, prompt = jsonToJsonArrayFunction(purchaseQuestionData)
 		}
 	case util.SimpleGradesQuestions:
+		gradesQuestionData = generateGradesQuestionData()
+
 		switch currentFunctionType {
 		case jsonToJson:
 			var jsonToJsonFunction func(util.ComplexGradesObject) ([]util.SimplerStudent, string)
 
 			jsonToJsonFunction = transforms.GetHighestScoreForEachSubject
 
-			gradesQuestionData = generateGradesQuestionData()
 			gradesAnswerDataJson, prompt = jsonToJsonFunction(gradesQuestionData)
 		case jsonToRidicJson:
 			var jsonToRidicJsonFunction func(util.ComplexGradesObject) (util.Student, string)
 
 			jsonToRidicJsonFunction = transforms.GetHighestResultInOneSubject
 
-			gradesQuestionData = generateGradesQuestionData()
 			gradesAnswerDataRidicJson, prompt = jsonToRidicJsonFunction(gradesQuestionData)
 		case jsonToInt:
 			var jsonToIntFunction func(util.ComplexGradesObject) (int, string)
 
 			jsonToIntFunction = transforms.GetHighestScoreForPersonInSubject
 
-			gradesQuestionData = generateGradesQuestionData()
 			gradesAnswerDataInt, prompt = jsonToIntFunction(gradesQuestionData)
 		default:
 			log.Println("fell into the default question type...for...reasons...")
