@@ -415,12 +415,7 @@ func generateNextQuestionAnswer() {
 		case jsonToJson:
 			var jsonToJsonFunction func(transforms.PureJsonArrayLottery) (util.FakeLotteryPick, string)
 
-			functionToCall := 0
-
-			switch functionToCall {
-			case 0:
-				jsonToJsonFunction = transforms.PickAWinner
-			}
+			jsonToJsonFunction = transforms.PickAWinner
 
 			lotteryQuestionData = generateLotteryPickQuestionData()
 			lotteryAnswerDataJson, prompt = jsonToJsonFunction(lotteryQuestionData)
@@ -428,38 +423,21 @@ func generateNextQuestionAnswer() {
 		case jsonToDict:
 			var jsonToFreqDistFunction func(transforms.PureJsonArrayLottery) (map[string]int, string)
 
-			functionToCall := 0
-
-			switch functionToCall {
-			case 0:
-				jsonToFreqDistFunction = transforms.GetLotteryPickFrequencyDistribution
-			}
+			jsonToFreqDistFunction = transforms.GetLotteryPickFrequencyDistribution
 
 			lotteryQuestionData = generateLotteryPickQuestionData()
 			lotteryAnswerFreqDist, prompt = jsonToFreqDistFunction(lotteryQuestionData)
 		case jsonToIntArray:
 			var jsonToIntArrayFunction func(transforms.PureJsonArrayLottery) ([]int, string)
 
-			// only one so far
-			functionToCall := 0
-
-			switch functionToCall {
-			case 0:
-				jsonToIntArrayFunction = transforms.GetAllUniqueArrayIntValues
-			}
+			jsonToIntArrayFunction = transforms.GetAllUniqueArrayIntValues
 
 			lotteryQuestionData = generateLotteryPickQuestionData()
 			lotteryAnswerDataIntArray, prompt = jsonToIntArrayFunction(lotteryQuestionData)
 		case jsonToInt:
 			var jsonToIntFunction func(transforms.PureJsonArrayLottery) (int, string)
 
-			// only one so far here too
-			functionToCall := 0
-
-			switch functionToCall {
-			case 0:
-				jsonToIntFunction = transforms.GetNumberOfPicks
-			}
+			jsonToIntFunction = transforms.GetNumberOfPicks
 
 			lotteryQuestionData = generateLotteryPickQuestionData()
 			lotteryAnswerDataInt, prompt = jsonToIntFunction(lotteryQuestionData)
@@ -472,31 +450,14 @@ func generateNextQuestionAnswer() {
 		case jsonToInt:
 			var jsonToIntFunction func(transforms.PureJson) (int, string)
 
-			// only one of these at the moment, same as below
-			functionToCall := 0
-
-			switch functionToCall {
-			case 0:
-				jsonToIntFunction = transforms.GetOneKeyIntValue
-			default:
-				log.Fatal("this deffo blew up")
-			}
+			jsonToIntFunction = transforms.GetOneKeyIntValue
 
 			personQuestionData = generatePersonQuestionData()
 			personAnswerDataInt, prompt = jsonToIntFunction(personQuestionData)
 		case jsonToString:
 			var jsonToStringFunction func(transforms.PureJson) (string, string)
 
-			// we should have more of these, but for now, we just hardcode to 0
-			// functionCall := rand.Intn(totalJsonToStringFunctions)
-			functionToCall := 0
-
-			switch functionToCall {
-			case 0:
-				jsonToStringFunction = transforms.GetOneKeyStringValue
-			default:
-				log.Fatal("this blew up!")
-			}
+			jsonToStringFunction = transforms.GetOneKeyStringValue
 
 			personQuestionData = generatePersonQuestionData()
 			personAnswerDataString, prompt = jsonToStringFunction(personQuestionData)
@@ -528,42 +489,21 @@ func generateNextQuestionAnswer() {
 		case jsonToIntArray:
 			var jsonToIntArrayFunction func(transforms.PureJsonArrayPurchases) ([]int, string)
 
-			functionToCall := 0
-
-			switch functionToCall {
-			case 0:
-				jsonToIntArrayFunction = transforms.GetAllArrayIntValues
-			default:
-				log.Fatal("blow it all to hell!")
-			}
+			jsonToIntArrayFunction = transforms.GetAllArrayIntValues
 
 			purchaseQuestionData = generatePurchaseQuestionData()
 			purchaseAnswerDataIntArray, prompt = jsonToIntArrayFunction(purchaseQuestionData)
 		case jsonToStringArray:
 			var jsonToStringArrayFunction func(transforms.PureJsonArrayPurchases) ([]string, string)
 
-			functionToCall := 0
-
-			switch functionToCall {
-			case 0:
-				jsonToStringArrayFunction = transforms.GetAllArrayStringValues
-			default:
-				log.Fatal("whoa...this massively blew up")
-			}
+			jsonToStringArrayFunction = transforms.GetAllArrayStringValues
 
 			purchaseQuestionData = generatePurchaseQuestionData()
 			purchaseAnswerDataStringArray, prompt = jsonToStringArrayFunction(purchaseQuestionData)
 		case jsonToJson:
 			var jsonToJsonArrayFunction func(transforms.PureJsonArrayPurchases) ([]util.FakePurchase, string)
 
-			functionToCall := 0
-
-			switch functionToCall {
-			case 0:
-				jsonToJsonArrayFunction = transforms.GetFilteredByPurchasePrice
-			default:
-				log.Fatal("couldn't figure out which function to use")
-			}
+			jsonToJsonArrayFunction = transforms.GetFilteredByPurchasePrice
 
 			purchaseQuestionData = generatePurchaseQuestionData()
 			purchaseAnswerDataJsonArray, prompt = jsonToJsonArrayFunction(purchaseQuestionData)
@@ -573,45 +513,21 @@ func generateNextQuestionAnswer() {
 		case jsonToJson:
 			var jsonToJsonFunction func(util.ComplexGradesObject) ([]util.SimplerStudent, string)
 
-			functionToCall := 0
-
-			switch functionToCall {
-			case 0:
-				jsonToJsonFunction = transforms.GetHighestScoreForEachSubject
-			default:
-				log.Fatal("big bad problem")
-			}
+			jsonToJsonFunction = transforms.GetHighestScoreForEachSubject
 
 			gradesQuestionData = generateGradesQuestionData()
 			gradesAnswerDataJson, prompt = jsonToJsonFunction(gradesQuestionData)
 		case jsonToRidicJson:
 			var jsonToRidicJsonFunction func(util.ComplexGradesObject) (util.Student, string)
 
-			functionToCall := 0
-
-			switch functionToCall {
-			case 0:
-				jsonToRidicJsonFunction = transforms.GetHighestResultInOneSubject
-			default:
-				log.Fatal("couldn't create some ridic exercise")
-			}
+			jsonToRidicJsonFunction = transforms.GetHighestResultInOneSubject
 
 			gradesQuestionData = generateGradesQuestionData()
 			gradesAnswerDataRidicJson, prompt = jsonToRidicJsonFunction(gradesQuestionData)
 		case jsonToInt:
 			var jsonToIntFunction func(util.ComplexGradesObject) (int, string)
 
-			// this is getting a bit ridic, since I initially assumed we might want to have different types of transforms
-			// possibly returning the same type of data structure, but what it's turning into is just one type of
-			// data structure per function type, so I'll probably get rid of this hard coding later
-			functionToCall := 0
-
-			switch functionToCall {
-			case 0:
-				jsonToIntFunction = transforms.GetHighestScoreForPersonInSubject
-			default:
-				log.Fatal("something bad happened")
-			}
+			jsonToIntFunction = transforms.GetHighestScoreForPersonInSubject
 
 			gradesQuestionData = generateGradesQuestionData()
 			gradesAnswerDataInt, prompt = jsonToIntFunction(gradesQuestionData)
