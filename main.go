@@ -417,7 +417,9 @@ func processAnswer[T any](context *gin.Context, expectedAnswer T) {
 		log.Println("correct")
 		generateNextQuestionAnswer()
 	} else {
+		jsonData := []byte(`{"message": "wrong answer, please try again"}`)
 		log.Println("wrong answer, please try again")
+		context.Data(http.StatusBadRequest, "application/json", jsonData)
 	}
 }
 
