@@ -252,7 +252,7 @@ func main() {
 	viper.SetDefault("PORT", "8000")
 
 	// this is two different checks for MODE == "prod", because we need to set the mode
-	// before we intialize the router, but we can't call router.Use until after we initialize the router
+	// before we initialize the router, but we can't call router.Use until after we initialize the router
 	if MODE == "prod" {
 		gin.SetMode(gin.ReleaseMode)
 	}
