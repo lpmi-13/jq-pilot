@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"log"
 	"math/rand"
@@ -117,6 +118,120 @@ func generatePersonQuestionData() transforms.PureJson {
 	}
 }
 
+func generatePeopleQuestion() (interface{}, error) {
+	var mixedResponse interface{}
+	if currentFunctionType == jsonToJson {
+		mixedResponse = JsonQuestion[map[string]interface{}, map[string]interface{}]{
+			Question: personQuestionData,
+			Answer:   personAnswerDataJson,
+			Prompt:   prompt,
+		}
+	} else if currentFunctionType == jsonToString {
+		mixedResponse = JsonQuestion[map[string]interface{}, string]{
+			Question: personQuestionData,
+			Answer:   personAnswerDataString,
+			Prompt:   prompt,
+		}
+	} else if currentFunctionType == jsonToInt {
+		mixedResponse = JsonQuestion[map[string]interface{}, int]{
+			Question: personQuestionData,
+			Answer:   personAnswerDataInt,
+			Prompt:   prompt,
+		}
+	} else {
+		return nil, errors.New("couldn't match function type for people question")
+	}
+
+	return mixedResponse, nil
+}
+
+func generatePurchaseQuestion() (interface{}, error) {
+	var mixedResponse interface{}
+	if currentFunctionType == jsonToIntArray {
+		mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []int]{
+			Question: purchaseQuestionData,
+			Answer:   purchaseAnswerDataIntArray,
+			Prompt:   prompt,
+		}
+	} else if currentFunctionType == jsonToStringArray {
+		mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []string]{
+			Question: purchaseQuestionData,
+			Answer:   purchaseAnswerDataStringArray,
+			Prompt:   prompt,
+		}
+	} else if currentFunctionType == jsonToJson {
+		mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []util.FakePurchase]{
+			Question: purchaseQuestionData,
+			Answer:   purchaseAnswerDataJsonArray,
+			Prompt:   prompt,
+		}
+	} else {
+		return nil, errors.New("couldn't match function type for purchase question")
+	}
+
+	return mixedResponse, nil
+}
+
+func generateGradesQuestion() (interface{}, error) {
+	var mixedResponse interface{}
+	if currentFunctionType == jsonToInt {
+		mixedResponse = JsonQuestion[util.ComplexGradesObject, int]{
+			Question: gradesQuestionData,
+			Answer:   gradesAnswerDataInt,
+			Prompt:   prompt,
+		}
+	} else if currentFunctionType == jsonToRidicJson {
+		mixedResponse = JsonQuestion[util.ComplexGradesObject, util.Student]{
+			Question: gradesQuestionData,
+			Answer:   gradesAnswerDataRidicJson,
+			Prompt:   prompt,
+		}
+	} else if currentFunctionType == jsonToJson {
+		mixedResponse = JsonQuestion[util.ComplexGradesObject, []util.SimplerStudent]{
+			Question: gradesQuestionData,
+			Answer:   gradesAnswerDataJson,
+			Prompt:   prompt,
+		}
+	} else {
+		return nil, errors.New("couldn't match function type for grades question")
+	}
+
+	return mixedResponse, nil
+}
+
+func generateLotteryQuestion() (interface{}, error) {
+	var mixedResponse interface{}
+	if currentFunctionType == jsonToJson {
+		mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, util.FakeLotteryPick]{
+			Question: lotteryQuestionData,
+			Answer:   lotteryAnswerDataJson,
+			Prompt:   prompt,
+		}
+	} else if currentFunctionType == jsonToDict {
+		mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, map[string]int]{
+			Question: lotteryQuestionData,
+			Answer:   lotteryAnswerFreqDist,
+			Prompt:   prompt,
+		}
+	} else if currentFunctionType == jsonToIntArray {
+		mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, []int]{
+			Question: lotteryQuestionData,
+			Answer:   lotteryAnswerDataIntArray,
+			Prompt:   prompt,
+		}
+	} else if currentFunctionType == jsonToInt {
+		mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, int]{
+			Question: lotteryQuestionData,
+			Answer:   lotteryAnswerDataInt,
+			Prompt:   prompt,
+		}
+	} else {
+		return nil, errors.New("couldn't match function type for lottery question")
+	}
+
+	return mixedResponse, nil
+}
+
 func main() {
 	// this should be dynamic to set the first exercise instead of the same one every time
 	currentQuestionType = util.SimplePeopleQuestions
@@ -171,94 +286,24 @@ func main() {
 			if string(message) == "update" {
 				var mixedResponse interface{}
 				if currentQuestionType == util.SimplePeopleQuestions {
-					if currentFunctionType == jsonToJson {
-						mixedResponse = JsonQuestion[map[string]interface{}, map[string]interface{}]{
-							Question: personQuestionData,
-							Answer:   personAnswerDataJson,
-							Prompt:   prompt,
-						}
-					} else if currentFunctionType == jsonToString {
-						mixedResponse = JsonQuestion[map[string]interface{}, string]{
-							Question: personQuestionData,
-							Answer:   personAnswerDataString,
-							Prompt:   prompt,
-						}
-					} else if currentFunctionType == jsonToInt {
-						mixedResponse = JsonQuestion[map[string]interface{}, int]{
-							Question: personQuestionData,
-							Answer:   personAnswerDataInt,
-							Prompt:   prompt,
-						}
-					} else {
-						log.Println("couldn't match function type for people question")
+					mixedResponse, err = generatePeopleQuestion()
+					if err != nil {
+						log.Fatal(err)
 					}
 				} else if currentQuestionType == util.SimplePurchaseQuestions {
-					if currentFunctionType == jsonToIntArray {
-						mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []int]{
-							Question: purchaseQuestionData,
-							Answer:   purchaseAnswerDataIntArray,
-							Prompt:   prompt,
-						}
-					} else if currentFunctionType == jsonToStringArray {
-						mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []string]{
-							Question: purchaseQuestionData,
-							Answer:   purchaseAnswerDataStringArray,
-							Prompt:   prompt,
-						}
-					} else if currentFunctionType == jsonToJson {
-						mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []util.FakePurchase]{
-							Question: purchaseQuestionData,
-							Answer:   purchaseAnswerDataJsonArray,
-							Prompt:   prompt,
-						}
+					mixedResponse, err = generatePurchaseQuestion()
+					if err != nil {
+						log.Fatal(err)
 					}
 				} else if currentQuestionType == util.SimpleLotteryQuestions {
-					if currentFunctionType == jsonToJson {
-						mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, util.FakeLotteryPick]{
-							Question: lotteryQuestionData,
-							Answer:   lotteryAnswerDataJson,
-							Prompt:   prompt,
-						}
-					} else if currentFunctionType == jsonToDict {
-						mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, map[string]int]{
-							Question: lotteryQuestionData,
-							Answer:   lotteryAnswerFreqDist,
-							Prompt:   prompt,
-						}
-					} else if currentFunctionType == jsonToIntArray {
-						mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, []int]{
-							Question: lotteryQuestionData,
-							Answer:   lotteryAnswerDataIntArray,
-							Prompt:   prompt,
-						}
-					} else if currentFunctionType == jsonToInt {
-						mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, int]{
-							Question: lotteryQuestionData,
-							Answer:   lotteryAnswerDataInt,
-							Prompt:   prompt,
-						}
+					mixedResponse, err = generateLotteryQuestion()
+					if err != nil {
+						log.Fatal(err)
 					}
 				} else if currentQuestionType == util.SimpleGradesQuestions {
-					if currentFunctionType == jsonToInt {
-						mixedResponse = JsonQuestion[util.ComplexGradesObject, int]{
-							Question: gradesQuestionData,
-							Answer:   gradesAnswerDataInt,
-							Prompt:   prompt,
-						}
-					} else if currentFunctionType == jsonToRidicJson {
-						mixedResponse = JsonQuestion[util.ComplexGradesObject, util.Student]{
-							Question: gradesQuestionData,
-							Answer:   gradesAnswerDataRidicJson,
-							Prompt:   prompt,
-						}
-					} else if currentFunctionType == jsonToJson {
-						mixedResponse = JsonQuestion[util.ComplexGradesObject, []util.SimplerStudent]{
-							Question: gradesQuestionData,
-							Answer:   gradesAnswerDataJson,
-							Prompt:   prompt,
-						}
-					} else {
-						log.Fatal("no obvious function type")
+					mixedResponse, err = generateGradesQuestion()
+					if err != nil {
+						log.Fatal(err)
 					}
 				} else {
 					log.Fatal("couldn't get question type")
@@ -316,7 +361,6 @@ func generateNextQuestionAnswer() {
 	// we need to know what type of question we want so that we can use that to determine the subset
 	// of function types to use to create the activity
 	currentQuestionType = util.GeneratePossibleValue(util.PossibleQuestionTypes)
-
 	// there's probably a better way to structure this hierarchy, but we'll just go with
 	// something dumb and verbose for now
 	if currentQuestionType == util.SimplePeopleQuestions {
