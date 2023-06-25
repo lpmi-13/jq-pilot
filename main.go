@@ -346,13 +346,14 @@ var upgrader = websocket.Upgrader{
 
 // this is crap and should be more general
 func getQuestion(c *gin.Context) {
-	if currentQuestionType == util.SimplePeopleQuestions {
+	switch currentQuestionType {
+	case util.SimplePeopleQuestions:
 		c.IndentedJSON(http.StatusOK, personQuestionData)
-	} else if currentQuestionType == util.SimplePurchaseQuestions {
+	case util.SimplePurchaseQuestions:
 		c.IndentedJSON(http.StatusOK, purchaseQuestionData)
-	} else if currentQuestionType == util.SimpleLotteryQuestions {
+	case util.SimpleLotteryQuestions:
 		c.IndentedJSON(http.StatusOK, lotteryQuestionData)
-	} else if currentQuestionType == util.SimpleGradesQuestions {
+	case util.SimpleGradesQuestions:
 		c.IndentedJSON(http.StatusOK, gradesQuestionData)
 	}
 }
