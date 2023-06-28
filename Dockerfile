@@ -31,7 +31,6 @@ from node:18-alpine as final
 WORKDIR /app
 
 COPY --from=frontend /app/build /app/build
-COPY --from=frontend /app/node_modules /app/node_modules
 COPY --from=builder /app/jq-pilot /app/jq-pilot
 
 EXPOSE 8000
