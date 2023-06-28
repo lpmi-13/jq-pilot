@@ -33,6 +33,7 @@ function App() {
     const [wsAnswer, setWsAnswer] = useState(null);
     const [wsPrompt, setWsPrompt] = useState(null);
 
+    // probably just do this once on startup, and then after that just wait for a push
     setInterval(() => {
         if (!isOpen(ws)) {
             return;

@@ -26,6 +26,10 @@ based on: https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4
 
 ## Local runs
 
+There are two ways to run this locally, depending on whether you have node and go installed, or just want to use docker.
+
+### Node and Go installed
+
 To start this up and try some exercises, just run
 
 ```
@@ -35,6 +39,15 @@ npm start --prefix frontend
 ```
 
 and you should be off to the races.
+
+### The Docker Way
+
+```
+docker build -t jq-pilot -f Dockerfile.local .
+docker run -it --rm -p 8000:8000 jq-pilot
+```
+
+### Doing the exercises
 
 The recommend way to interact with this is to use `curl` in a terminal, but feel free to interact with the endpoint via the tool of your choice!
 
