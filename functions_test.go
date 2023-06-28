@@ -13,15 +13,13 @@ var (
 	floatArray  = []float64{34, 22, 29, 20}
 )
 
-// these tests should use formatting to print out the expected and received valz
-
 func TestContainsStringTrue(t *testing.T) {
 	stringToFind := "b"
 
 	actual := util.ContainsElement(stringArray, stringToFind)
 
 	if expected := true; expected != actual {
-		t.Error("Expected to find the string and did not")
+		t.Errorf("Expected to find the string %s and did not", stringToFind)
 	}
 }
 
@@ -31,7 +29,7 @@ func TestContainsStringFalse(t *testing.T) {
 	actual := util.ContainsElement(stringArray, stringToFind)
 
 	if expected := false; expected != actual {
-		t.Error("Expected to not find the string and did")
+		t.Errorf("Expected to not find the string %s and did", stringToFind)
 	}
 }
 
@@ -41,7 +39,7 @@ func TestContainsFloatTrue(t *testing.T) {
 	actual := util.ContainsElement(floatArray, floatToFind)
 
 	if expected := true; expected != actual {
-		t.Error("Expected to find the float and did not")
+		t.Errorf("Expected to find the float %v and did not", floatToFind)
 	}
 }
 
@@ -51,7 +49,7 @@ func TestContainsFloatFalse(t *testing.T) {
 	actual := util.ContainsElement(floatArray, floatToFind)
 
 	if expected := false; expected != actual {
-		t.Error("Expected not to find the float and did")
+		t.Errorf("Expected not to find the float %v and did", floatToFind)
 	}
 }
 
@@ -62,7 +60,7 @@ func TestUniqueRemovesDuplicates(t *testing.T) {
 
 	diff := deep.Equal(expected, actual)
 	if diff != nil {
-		t.Error("Expected to filter unique values, but didn't")
+		t.Errorf("Expected %v to equal %v, but it didn't", expected, actual)
 	}
 }
 
@@ -73,7 +71,7 @@ func TestUniqueKeepsOnlyUniques(t *testing.T) {
 
 	diff := deep.Equal(expected, actual)
 	if diff != nil {
-		t.Error("didn't keep all the unique values")
+		t.Errorf("Expected %v to equal %v, but it didn't", expected, actual)
 	}
 }
 
@@ -81,9 +79,8 @@ func TestGetNRandomValuesFromArray(t *testing.T) {
 	testArray := []string{"this", "that", "the other"}
 	expected := 2
 	randomValues := util.GetNRandomValuesFromArray(testArray, expected)
-	actual := len(randomValues)
 
-	if expected := 2; expected != actual {
-		t.Error("didn't return the number of values we expected")
+	if expected := 2; expected != len(randomValues) {
+		t.Errorf("expected %v but got %v", expected, len(randomValues))
 	}
 }
