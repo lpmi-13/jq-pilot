@@ -15,6 +15,10 @@ RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /app/jq-pilot
 
 FROM node:18-alpine as frontend
 
+# pass in --build-arg ENV=local (or any value that's not production) to run this locally.
+# otherwise, the websocket protocol will be wss, which won't work out of the box
+ARG ENV=production
+
 WORKDIR /app
 
 COPY ./frontend/package.json /app/package.json
@@ -24,7 +28,7 @@ RUN npm install --omit=dev
 COPY ./frontend/public /app/public
 COPY ./frontend/src /app/src
 
-RUN REACT_APP_ENV=production npm run build
+RUN REACT_APP_ENV=$ENV npm run build
 
 from node:18-alpine as final
 

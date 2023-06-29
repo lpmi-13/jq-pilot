@@ -42,8 +42,11 @@ and you should be off to the races.
 
 ### The Docker Way
 
+Be sure to pass in `--build-arg ENV=local` (or any value that's not "production") to avoid the application trying
+to use the wss protocol, which won't work out of the box locally.
+
 ```
-docker build -t jq-pilot -f Dockerfile.local .
+docker build -t jq-pilot --build-arg ENV=local .
 docker run -it --rm -p 8000:8000 jq-pilot
 ```
 
