@@ -236,9 +236,9 @@ func GetFilteredByPurchasePrice(jsonInput PureJsonArrayPurchases) ([]util.FakePu
 	var promptString string
 
 	if filterForHigher {
-		promptString = fmt.Sprintf("find all purchases with a price above: %.2f", differenceBetweenMinMax)
+		promptString = fmt.Sprintf("find all purchases with a price above: %.2f", middlePrice)
 	} else {
-		promptString = fmt.Sprintf("find all purchases with a price below: %.2f", differenceBetweenMinMax)
+		promptString = fmt.Sprintf("find all purchases with a price below: %.2f", middlePrice)
 	}
 
 	return copiedArray, promptString
