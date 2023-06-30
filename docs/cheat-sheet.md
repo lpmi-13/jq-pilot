@@ -55,3 +55,9 @@ jq '[.purchases[] | select(.PurchasePrice > X)]'
 ```
 jq '[.lotteryPicks[] | .numbers] | flatten | unique'
 ```
+
+-   get the highest grade for each student in each subject
+
+```
+jq '[.students[] | {name: .name, grades: { results: { art: .grades.results.art | max, history: .grades.results.history | max, math: .grades.results.math | max}}}]'
+```
