@@ -24,6 +24,8 @@ based on: https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4
 -   get the type of array item
 -   get min and max values of an array
 
+> If you need some help with specific excercises, you can look at this [cheat sheet](docs/cheat-sheet.md)
+
 ## Local runs
 
 There are two ways to run this locally, depending on whether you have node and go installed, or just want to use docker.
