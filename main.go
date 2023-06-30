@@ -498,6 +498,8 @@ func getAnswer(c *gin.Context) {
 			processAnswer[int](c, gradesAnswerDataInt)
 		} else if currentFunctionType == jsonToJson {
 			processAnswer[[]util.SimplerStudent](c, gradesAnswerDataJson)
+		} else if currentFunctionType == jsonToRidicJson {
+			processAnswer[util.Student](c, gradesAnswerDataRidicJson)
 		}
 	} else {
 		log.Println("No current function type...sad day")
