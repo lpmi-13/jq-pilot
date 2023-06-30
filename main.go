@@ -233,11 +233,7 @@ func generateLotteryQuestion() (interface{}, error) {
 }
 
 func main() {
-	// this should be dynamic to set the first exercise instead of the same one every time
-	currentQuestionType = util.SimplePeopleQuestions
-	currentFunctionType = jsonToJson
-	personQuestionData = generatePersonQuestionData()
-	personAnswerDataJson, prompt = transforms.DeleteOneKey(personQuestionData)
+	generateNextQuestionAnswer()
 
 	// using standard library "flag" package
 	flag.String("MODE", "dev", "whether we're running in dev or production mode")
@@ -362,6 +358,7 @@ func generateNextQuestionAnswer() {
 	// we need to know what type of question we want so that we can use that to determine the subset
 	// of function types to use to create the activity
 	currentQuestionType = util.GeneratePossibleValue(util.PossibleQuestionTypes)
+
 	// there's probably a better way to structure this hierarchy, but we'll just go with
 	// something dumb and verbose for now
 	if currentQuestionType == util.SimplePeopleQuestions {
@@ -453,6 +450,7 @@ func generateNextQuestionAnswer() {
 func processAnswer[T any](context *gin.Context, expectedAnswer T) {
 	var actualAnswer T
 	if err := context.BindJSON(&actualAnswer); err != nil {
+		log.Println(err)
 		context.AbortWithStatus(http.StatusBadRequest)
 	}
 
