@@ -44,8 +44,14 @@ jq '.lotteryPicks[] | select(.person == "WINNER_NAME") | .winner = true'
 jq '[.purchases[] | .PurchaseCurrency]'
 ```
 
--   find all purchases with a price about X
+-   find all purchases with a price above X
 
 ```
 jq '[.purchases[] | select(.PurchasePrice > X)]'
+```
+
+-   get all unique lottery picks
+
+```
+jq '[.lotteryPicks[] | .numbers] | flatten | unique'
 ```
