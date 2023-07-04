@@ -192,16 +192,17 @@ type SimplerGradesObject struct {
 }
 
 func generateGradeResults() []int {
-	var scores []int
+	numbeOfGradesToGenerate := 3
+	scores := make([]int, numbeOfGradesToGenerate)
 
 	scoreUpperRange := 100
 	scoreLowerRange := 50
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < numbeOfGradesToGenerate; i++ {
 		rand.Seed(time.Now().UnixNano())
 		score := rand.Intn(scoreUpperRange-scoreLowerRange) + scoreLowerRange
 
-		scores = append(scores, score)
+		scores[i] = score
 	}
 
 	return scores
@@ -280,10 +281,10 @@ func GenerateLotteryPicks() []FakeLotteryPick {
 func GeneratePurchaseList() []FakePurchase {
 	rand.Seed(time.Now().UnixNano())
 
-	var purchasesArray []FakePurchase
-
 	// hacking this so we always have at least 2 purchases...for now
 	numberOfPurchases := rand.Intn(4) + 2
+	purchasesArray := make([]FakePurchase, numberOfPurchases)
+
 	for i := 0; i < numberOfPurchases; i++ {
 		var purchaseItem FakePurchase
 
@@ -292,7 +293,7 @@ func GeneratePurchaseList() []FakePurchase {
 			log.Fatal(err)
 		}
 
-		purchasesArray = append(purchasesArray, purchaseItem)
+		purchasesArray[i] = purchaseItem
 	}
 
 	// we might end up substituting something like a bounded string array of values and

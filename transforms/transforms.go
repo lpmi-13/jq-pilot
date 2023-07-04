@@ -166,13 +166,13 @@ func KeepOneKey(jsonInput PureJson) (PureJson, string) {
 func GetAllArrayStringValues(jsonInput PureJsonArrayPurchases) ([]string, string) {
 	rand.Seed(time.Now().UnixNano())
 
-	// just grab the currency for now...this is nasty
-	valuesArray := []string{}
-
 	nestedPurchases := jsonInput["purchases"]
 
+	// just grab the currency for now...this is nasty
+	valuesArray := make([]string, len(nestedPurchases))
+
 	for i := range nestedPurchases {
-		valuesArray = append(valuesArray, nestedPurchases[i].PurchaseCurrency)
+		valuesArray[i] = nestedPurchases[i].PurchaseCurrency
 	}
 
 	return valuesArray, "get all the purchase currencies"
@@ -182,12 +182,12 @@ func GetAllArrayStringValues(jsonInput PureJsonArrayPurchases) ([]string, string
 func GetAllArrayIntValues(jsonInput PureJsonArrayPurchases) ([]int, string) {
 	rand.Seed(time.Now().UnixNano())
 
-	valuesArray := []int{}
-
 	// I feel bad about this, and you should too
 	nestedPurchases := jsonInput["purchases"]
+	valuesArray := make([]int, len(nestedPurchases))
+
 	for i := range nestedPurchases {
-		valuesArray = append(valuesArray, nestedPurchases[i].PurchaseCode)
+		valuesArray[i] = nestedPurchases[i].PurchaseCode
 	}
 
 	return valuesArray, "get all the purchase codes"
