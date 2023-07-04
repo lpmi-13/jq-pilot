@@ -35,6 +35,7 @@ const (
 	jsonToInt         = "jsonToInt"
 	jsonToStringArray = "jsonToStringArray"
 	jsonToIntArray    = "jsonToIntArray"
+	jsonToSmallerJson = "jsonToSmallerJson"
 	jsonToDict        = "jsonToDict"
 )
 
@@ -46,7 +47,7 @@ var (
 		jsonToStringArray, jsonToIntArray, jsonToJson,
 	}
 	lotteryFunctionTypesToCall = []string{
-		jsonToJson, jsonToIntArray, jsonToInt,
+		jsonToJson, jsonToIntArray, jsonToInt, jsonToSmallerJson,
 	}
 	gradesFunctionTypesToCall = []string{
 		jsonToInt, jsonToJson, jsonToRidicJson,
@@ -67,6 +68,7 @@ var (
 	lotteryAnswerDataIntArray     []int
 	lotteryAnswerDataInt          int
 	lotteryAnswerDataJson         util.FakeLotteryPick
+	lotteryAnswerDataSmallerJson  []util.FakeLotteryPick
 	lotteryAnswerFreqDist         map[string]int
 	gradesQuestionData            util.ComplexGradesObject
 	gradesAnswerDataInt           int
@@ -205,6 +207,12 @@ func generateLotteryQuestion() (interface{}, error) {
 		mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, util.FakeLotteryPick]{
 			Question: lotteryQuestionData,
 			Answer:   lotteryAnswerDataJson,
+			Prompt:   prompt,
+		}
+	} else if currentFunctionType == jsonToSmallerJson {
+		mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, []util.FakeLotteryPick]{
+			Question: lotteryQuestionData,
+			Answer:   lotteryAnswerDataSmallerJson,
 			Prompt:   prompt,
 		}
 	} else if currentFunctionType == jsonToDict {
@@ -382,6 +390,8 @@ func generateNextQuestionAnswer() {
 		switch currentFunctionType {
 		case jsonToJson:
 			lotteryAnswerDataJson, prompt = transforms.PickAWinner(lotteryQuestionData)
+		case jsonToSmallerJson:
+			lotteryAnswerDataSmallerJson, prompt = transforms.GetFirstNPicks(lotteryQuestionData)
 		case jsonToDict:
 			lotteryAnswerFreqDist, prompt = transforms.GetLotteryPickFrequencyDistribution(lotteryQuestionData)
 		case jsonToIntArray:
@@ -486,6 +496,8 @@ func getAnswer(c *gin.Context) {
 	} else if currentQuestionType == util.SimpleLotteryQuestions {
 		if currentFunctionType == jsonToJson {
 			processAnswer[util.FakeLotteryPick](c, lotteryAnswerDataJson)
+		} else if currentFunctionType == jsonToSmallerJson {
+			processAnswer[[]util.FakeLotteryPick](c, lotteryAnswerDataSmallerJson)
 		} else if currentFunctionType == jsonToDict {
 			processAnswer[map[string]int](c, lotteryAnswerFreqDist)
 		} else if currentFunctionType == jsonToIntArray {

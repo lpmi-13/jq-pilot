@@ -274,6 +274,22 @@ func GetNumberOfPicks(jsonInput PureJsonArrayLottery) (int, string) {
 	return len(nestedLotteryPicks), "find the number of lottery picks"
 }
 
+func GetFirstNPicks(jsonInput PureJsonArrayLottery) ([]util.FakeLotteryPick, string) {
+	rand.Seed(time.Now().UnixNano())
+	// just hardcode this, since we want at least 2 and not more than 5
+	randomNumberOfPicks := rand.Intn(3) + 2
+	updatedArray := make([]util.FakeLotteryPick, len(jsonInput["lotteryPicks"]))
+
+	for i := range jsonInput["lotteryPicks"] {
+		var numberOfPicks []int
+		numberOfPicks = jsonInput["lotteryPicks"][i].Numbers[:randomNumberOfPicks]
+		updatedArray[i] = jsonInput["lotteryPicks"][i]
+		updatedArray[i].Numbers = numberOfPicks
+	}
+
+	return updatedArray, fmt.Sprintf("find the first %d picks for each person", randomNumberOfPicks)
+}
+
 func PickAWinner(jsonInput PureJsonArrayLottery) (util.FakeLotteryPick, string) {
 	// this is super basic just to practice adding fields to objects
 	rand.Seed(time.Now().UnixNano())

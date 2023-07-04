@@ -61,3 +61,9 @@ jq '[.lotteryPicks[] | .numbers] | flatten | unique'
 ```
 jq '[.students[] | {name: .name, grades: { results: { art: .grades.results.art | max, history: .grades.results.history | max, math: .grades.results.math | max}}}]'
 ```
+
+-   find the first N lottery picks for each person
+
+```
+jq '[.lotteryPicks[] | .numbers = .numbers[:N]]'
+```
