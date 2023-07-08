@@ -15,10 +15,12 @@ import (
 // - simple arrays of lottery picks for finding uniq values and total number of values
 // - more complicated stuff later...
 const (
-	SimpleLotteryQuestions  = "simpleLotteryQuestions"
-	SimplePeopleQuestions   = "simplePeopleQuestions"
-	SimplePurchaseQuestions = "simplePurchaseQuestions"
-	SimpleGradesQuestions   = "simpleGradesQuestions"
+	SimpleLotteryQuestions         = "simpleLotteryQuestions"
+	SimplePeopleQuestions          = "simplePeopleQuestions"
+	SimplePurchaseQuestions        = "simplePurchaseQuestions"
+	SimpleGradesQuestions          = "simpleGradesQuestions"
+	SimpleTagsQuestionsDictToArray = "simpleTagsQuestionsDictToArray"
+	SimpleTagsQuestionsArrayToDict = "simpleTagsQuestionsArrayToDict"
 )
 
 // we currently just have two string arrays to hold what is essentially either a 2-dimensional
@@ -40,7 +42,7 @@ const (
 // So we'll keep it as two different string array for now and merge or refactor or whatever into
 // something a bit cleaner eventually
 var PossibleQuestionTypes = []string{
-	SimpleGradesQuestions, SimpleLotteryQuestions, SimplePeopleQuestions, SimplePurchaseQuestions,
+	SimpleGradesQuestions, SimpleLotteryQuestions, SimplePeopleQuestions, SimplePurchaseQuestions, SimpleTagsQuestionsArrayToDict, SimpleTagsQuestionsDictToArray,
 }
 
 var possibleActivities = []string{
@@ -87,6 +89,15 @@ var PossibleLocations = []string{
 
 var PossibleSubjects = []string{"math", "art", "history"}
 
+var PossibleLabels = []string{
+	"instance", "domain", "ID", "reference", "team", "project", "department",
+}
+
+var PossibleValues = []string{
+	"blue", "sales", "data", "magnificent", "phoenix", "ada", "central", "infrared",
+	"toronto", "management", "delphi", "altius", "cattle", "sisu", "micromaterials",
+}
+
 // searches for a value in an array and returns true if found
 func ContainsElement[T comparable](s []T, id T) bool {
 	for _, v := range s {
@@ -96,6 +107,14 @@ func ContainsElement[T comparable](s []T, id T) bool {
 	}
 
 	return false
+}
+
+func GetSingleRandomValueFromArray[T any](a []T) T {
+	rand.Seed(time.Now().UnixNano())
+
+	randomIndex := rand.Intn(len(a))
+
+	return a[randomIndex]
 }
 
 // there are a lot of places where we want "3 random student names" or "4 random items", and
@@ -162,6 +181,11 @@ type FakeLotteryPick struct {
 	Person  string `json:"person"`
 	Numbers []int  `json:"numbers"`
 	Winner  bool   `json:"winner"`
+}
+
+type Tag struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
 }
 
 type Grades struct {

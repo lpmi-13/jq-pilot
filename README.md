@@ -23,6 +23,11 @@ based on: https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4
 -   filter array for all integer values above/below a value
 -   get the type of array item
 -   get min and max values of an array
+-   convert array of verbose label/value objects to simple key/value objects (from_entries)
+-   convert a simple key/value pair object into a verbose label/value array (to_entries)
+-   make all string values lowercase
+-   group objects by a common key (group_by)
+-   _something_ with map (map(select(.labels > 0))?)
 
 > If you need some help with specific excercises, you can look at this [cheat sheet](docs/cheat-sheet.md)
 

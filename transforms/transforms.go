@@ -274,20 +274,37 @@ func GetNumberOfPicks(jsonInput PureJsonArrayLottery) (int, string) {
 	return len(nestedLotteryPicks), "find the number of lottery picks"
 }
 
-func GetFirstNPicks(jsonInput PureJsonArrayLottery) ([]util.FakeLotteryPick, string) {
+// this is doing double duty for both a starting range and ending range rather than two
+// separate functions
+func GetNRangePicks(jsonInput PureJsonArrayLottery) ([]util.FakeLotteryPick, string) {
 	rand.Seed(time.Now().UnixNano())
 	// just hardcode this, since we want at least 2 and not more than 5
 	randomNumberOfPicks := rand.Intn(3) + 2
 	updatedArray := make([]util.FakeLotteryPick, len(jsonInput["lotteryPicks"]))
 
+	rangeFromBeginning := util.GenerateRandomBoolean()
+
 	for i := range jsonInput["lotteryPicks"] {
 		var numberOfPicks []int
-		numberOfPicks = jsonInput["lotteryPicks"][i].Numbers[:randomNumberOfPicks]
+		if rangeFromBeginning {
+			numberOfPicks = jsonInput["lotteryPicks"][i].Numbers[:randomNumberOfPicks]
+		} else {
+			numberOfPicks = jsonInput["lotteryPicks"][i].Numbers[randomNumberOfPicks:]
+		}
+
 		updatedArray[i] = jsonInput["lotteryPicks"][i]
 		updatedArray[i].Numbers = numberOfPicks
 	}
 
-	return updatedArray, fmt.Sprintf("find the first %d picks for each person", randomNumberOfPicks)
+	// my kingdom for a ternary!
+	var modifier string
+	if rangeFromBeginning {
+		modifier = "first"
+	} else {
+		modifier = "last"
+	}
+
+	return updatedArray, fmt.Sprintf("find the %s %d picks for each person", modifier, randomNumberOfPicks)
 }
 
 func PickAWinner(jsonInput PureJsonArrayLottery) (util.FakeLotteryPick, string) {
@@ -414,4 +431,38 @@ func GetHighestScoreForEachSubject(jsonInput util.ComplexGradesObject) ([]util.S
 	}
 
 	return studentArray, "get the top scores for each student in each subject"
+}
+
+// this is the stuff for the tags questions
+
+func GetDictFromArray(a []util.Tag) (map[string]string, string) {
+	newMap := make(map[string]string)
+	for i := range a {
+		newMap[a[i].Label] = a[i].Value
+	}
+
+	return newMap, "convert the array into a dict"
+}
+
+// I can't imagine why anyone would want to do this, but for completeness sake
+func GetArrayFromDict(a map[string]string) ([]util.Tag, string) {
+	newArray := make([]util.Tag, len(a))
+
+	count := 0
+
+	for k, v := range a {
+		newArray[count] = util.Tag{
+			Label: k,
+			Value: v,
+		}
+		count++
+	}
+
+	// we sort this array, since that makes it deterministic and an easier target
+	// of the exercise (ie, we just need a sort_by() at the end of the jq expression)
+	sort.SliceStable(newArray, func(i, j int) bool {
+		return newArray[i].Label < newArray[j].Label
+	})
+
+	return newArray, "convert the dict into an array"
 }

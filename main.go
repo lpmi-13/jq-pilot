@@ -37,6 +37,7 @@ const (
 	jsonToIntArray    = "jsonToIntArray"
 	jsonToSmallerJson = "jsonToSmallerJson"
 	jsonToDict        = "jsonToDict"
+	jsonToArray       = "jsonToArray"
 )
 
 var (
@@ -51,6 +52,14 @@ var (
 	}
 	gradesFunctionTypesToCall = []string{
 		jsonToInt, jsonToJson, jsonToRidicJson,
+	}
+	// there are two of these function types because we needed to break up the
+	// tags questions into two different starting data types
+	tagsArrayFunctionTypesToCall = []string{
+		jsonToDict,
+	}
+	tagsDictFunctionTypesToCall = []string{
+		jsonToArray,
 	}
 	delay                         = 500
 	totalJsonToJsonFunctions      = 3
@@ -74,6 +83,10 @@ var (
 	gradesAnswerDataInt           int
 	gradesAnswerDataJson          []util.SimplerStudent
 	gradesAnswerDataRidicJson     util.Student
+	tagsQuestionDataArray         []util.Tag
+	tagsQuestionDataDict          map[string]string
+	tagsAnswerDictData            map[string]string
+	tagsAnswerArrayData           []util.Tag
 	prompt                        = "please do stuff!"
 )
 
@@ -88,6 +101,40 @@ func generatePurchaseQuestionData() transforms.PureJsonArrayPurchases {
 // this has a lot of misdirection and complexity, so it should be simplified
 func generateGradesQuestionData() util.ComplexGradesObject {
 	return util.GenerateComplexGradesObject()
+}
+
+func generateTagsQuestionDataArray() []util.Tag {
+	rand.Seed(time.Now().UnixNano())
+
+	// we always want at least 2 tags, and no more than 6
+	numberOfTags := rand.Intn(4) + 2
+
+	// big fan of this pre-allocation instead of append
+	tagsArray := make([]util.Tag, numberOfTags)
+
+	for i := 0; i < numberOfTags; i++ {
+		tagsArray[i].Label = util.GetSingleRandomValueFromArray[string](util.PossibleLabels)
+		tagsArray[i].Value = util.GetSingleRandomValueFromArray[string](util.PossibleValues)
+	}
+
+	return tagsArray
+}
+
+// we need two of these tags question generators because they don't both start from the
+// same structure
+func generateTagsQuestionDataDict() map[string]string {
+	rand.Seed(time.Now().UnixNano())
+
+	// we always want at least 2 tags, and no more than 6
+	numberOfTags := rand.Intn(4) + 2
+
+	tagsDict := make(map[string]string)
+
+	for i := 0; i < numberOfTags; i++ {
+		tagsDict[util.GetSingleRandomValueFromArray[string](util.PossibleLabels)] = util.GetSingleRandomValueFromArray[string](util.PossibleValues)
+	}
+
+	return tagsDict
 }
 
 func generatePersonQuestionData() transforms.PureJson {
@@ -169,6 +216,36 @@ func generatePurchaseQuestion() (interface{}, error) {
 		}
 	} else {
 		return nil, errors.New("couldn't match function type for purchase question")
+	}
+
+	return mixedResponse, nil
+}
+
+func generateTagsQuestionArray() (interface{}, error) {
+	var mixedResponse interface{}
+	if currentFunctionType == jsonToDict {
+		mixedResponse = JsonQuestion[[]util.Tag, map[string]string]{
+			Question: tagsQuestionDataArray,
+			Answer:   tagsAnswerDictData,
+			Prompt:   prompt,
+		}
+	} else {
+		log.Fatal("didn't match the function type")
+	}
+
+	return mixedResponse, nil
+}
+
+func generateTagsQuestionDict() (interface{}, error) {
+	var mixedResponse interface{}
+	if currentFunctionType == jsonToArray {
+		mixedResponse = JsonQuestion[map[string]string, []util.Tag]{
+			Question: tagsQuestionDataDict,
+			Answer:   tagsAnswerArrayData,
+			Prompt:   prompt,
+		}
+	} else {
+		log.Fatal("function type match go boom")
 	}
 
 	return mixedResponse, nil
@@ -309,6 +386,16 @@ func main() {
 					if err != nil {
 						log.Fatal(err)
 					}
+				} else if currentQuestionType == util.SimpleTagsQuestionsArrayToDict {
+					mixedResponse, err = generateTagsQuestionArray()
+					if err != nil {
+						log.Fatal(err)
+					}
+				} else if currentQuestionType == util.SimpleTagsQuestionsDictToArray {
+					mixedResponse, err = generateTagsQuestionDict()
+					if err != nil {
+						log.Fatal(err)
+					}
 				} else {
 					log.Fatal("couldn't get question type")
 				}
@@ -359,6 +446,10 @@ func getQuestion(c *gin.Context) {
 		c.IndentedJSON(http.StatusOK, lotteryQuestionData)
 	case util.SimpleGradesQuestions:
 		c.IndentedJSON(http.StatusOK, gradesQuestionData)
+	case util.SimpleTagsQuestionsArrayToDict:
+		c.IndentedJSON(http.StatusOK, tagsQuestionDataArray)
+	case util.SimpleTagsQuestionsDictToArray:
+		c.IndentedJSON(http.StatusOK, tagsQuestionDataDict)
 	}
 }
 
@@ -377,6 +468,10 @@ func generateNextQuestionAnswer() {
 		currentFunctionType = util.GeneratePossibleValue(lotteryFunctionTypesToCall)
 	} else if currentQuestionType == util.SimpleGradesQuestions {
 		currentFunctionType = util.GeneratePossibleValue(gradesFunctionTypesToCall)
+	} else if currentQuestionType == util.SimpleTagsQuestionsArrayToDict {
+		currentFunctionType = util.GeneratePossibleValue(tagsArrayFunctionTypesToCall)
+	} else if currentQuestionType == util.SimpleTagsQuestionsDictToArray {
+		currentFunctionType = util.GeneratePossibleValue(tagsDictFunctionTypesToCall)
 	} else {
 		log.Fatal("this blew up because we couldn't determine the currentFunctionType")
 	}
@@ -391,7 +486,7 @@ func generateNextQuestionAnswer() {
 		case jsonToJson:
 			lotteryAnswerDataJson, prompt = transforms.PickAWinner(lotteryQuestionData)
 		case jsonToSmallerJson:
-			lotteryAnswerDataSmallerJson, prompt = transforms.GetFirstNPicks(lotteryQuestionData)
+			lotteryAnswerDataSmallerJson, prompt = transforms.GetNRangePicks(lotteryQuestionData)
 		case jsonToDict:
 			lotteryAnswerFreqDist, prompt = transforms.GetLotteryPickFrequencyDistribution(lotteryQuestionData)
 		case jsonToIntArray:
@@ -454,6 +549,19 @@ func generateNextQuestionAnswer() {
 		default:
 			log.Println("fell into the default question type...for...reasons...")
 		}
+	case util.SimpleTagsQuestionsArrayToDict:
+
+		switch currentFunctionType {
+		case jsonToDict:
+			tagsQuestionDataArray = generateTagsQuestionDataArray()
+			tagsAnswerDictData, prompt = transforms.GetDictFromArray(tagsQuestionDataArray)
+		}
+	case util.SimpleTagsQuestionsDictToArray:
+		switch currentFunctionType {
+		case jsonToArray:
+			tagsQuestionDataDict = generateTagsQuestionDataDict()
+			tagsAnswerArrayData, prompt = transforms.GetArrayFromDict(tagsQuestionDataDict)
+		}
 	}
 }
 
@@ -513,7 +621,19 @@ func getAnswer(c *gin.Context) {
 		} else if currentFunctionType == jsonToRidicJson {
 			processAnswer[util.Student](c, gradesAnswerDataRidicJson)
 		}
+	} else if currentQuestionType == util.SimpleTagsQuestionsArrayToDict {
+		if currentFunctionType == jsonToDict {
+			processAnswer[map[string]string](c, tagsAnswerDictData)
+		} else {
+			log.Fatal("didn't match a function type")
+		}
+	} else if currentQuestionType == util.SimpleTagsQuestionsDictToArray {
+		if currentFunctionType == jsonToArray {
+			processAnswer[[]util.Tag](c, tagsAnswerArrayData)
+		} else {
+			log.Fatal("didn't match a function type here either")
+		}
 	} else {
-		log.Println("No current function type...sad day")
+		log.Println("No current question type...sad day")
 	}
 }
