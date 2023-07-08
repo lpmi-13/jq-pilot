@@ -50,7 +50,7 @@ and you should be off to the races.
 ### The Docker Way
 
 Be sure to pass in `--build-arg ENV=local` (or any value that's not "production") to avoid the application trying
-to use the wss protocol, which won't work out of the box locally.
+to use the `wss` protocol, which won't work out of the box locally.
 
 ```
 docker build -t jq-pilot --build-arg ENV=local .
@@ -75,7 +75,9 @@ $ curl localhost:8000/question | jq DO_STUFF_HERE | curl -d @- localhost:8000/an
 
 If you just wanna hack on the gin webserver, you can run go with `nodemon` to get live reloading on code changes, which is hashtag delicious!
 
-> nodemon --exec go run main.go --signal SIGTERM
+```
+nodemon --exec go run main.go --signal SIGTERM
+```
 
 ## The commands we're practicing
 
@@ -84,3 +86,7 @@ For a refresher on some of the useful `jq` commands, see [this doc](docs/useful-
 ## Different types of data structures
 
 For an overview of the different json data schemas, see [this doc](docs/different-structures.md)
+
+## Super Secret Section
+
+...and if you need a cheat sheet, then go ahead and peep [this](docs/cheat-sheet.md)
