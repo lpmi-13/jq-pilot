@@ -19,7 +19,7 @@ based on: https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4
 -   get all unique values for repeated nested key
 -   get number of keys
 -   get length of array
--   get range of values from array (eg, [2:4])
+-   get range of values from array (eg, [2:])
 -   filter array for all integer values above/below a value
 -   get the type of array item
 -   get min and max values of an array
