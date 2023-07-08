@@ -28,7 +28,8 @@ type JsonQuestion[T any, V any] struct {
 }
 
 const (
-	jsonToJson = "jsonToJson"
+	jsonToJson           = "jsonToJson"
+	jsonToElaboratedJson = "jsonToElaboratedJson"
 	// this just commemorates when I solved a particularly tricky jq slicing problem
 	jsonToRidicJson   = "jsonToRidicJson"
 	jsonToString      = "jsonToString"
@@ -45,7 +46,7 @@ var (
 		jsonToJson, jsonToString, jsonToInt,
 	}
 	purchaseFunctionTypesToCall = []string{
-		jsonToStringArray, jsonToIntArray, jsonToJson,
+		jsonToStringArray, jsonToIntArray, jsonToJson, jsonToElaboratedJson,
 	}
 	lotteryFunctionTypesToCall = []string{
 		jsonToJson, jsonToIntArray, jsonToInt, jsonToSmallerJson, jsonToDict,
@@ -61,33 +62,34 @@ var (
 	tagsDictFunctionTypesToCall = []string{
 		jsonToArray,
 	}
-	delay                         = 500
-	totalJsonToJsonFunctions      = 3
-	currentQuestionType           = util.SimplePeopleQuestions
-	currentFunctionType           string
-	personQuestionData            transforms.PureJson
-	personAnswerDataJson          transforms.PureJson
-	personAnswerDataString        string
-	personAnswerDataInt           int
-	purchaseQuestionData          transforms.PureJsonArrayPurchases
-	purchaseAnswerDataIntArray    []int
-	purchaseAnswerDataStringArray []string
-	purchaseAnswerDataJsonArray   []util.FakePurchase
-	lotteryQuestionData           transforms.PureJsonArrayLottery
-	lotteryAnswerDataIntArray     []int
-	lotteryAnswerDataInt          int
-	lotteryAnswerDataJson         util.FakeLotteryPick
-	lotteryAnswerDataSmallerJson  []util.FakeLotteryPick
-	lotteryAnswerFreqDist         map[string]int
-	gradesQuestionData            util.ComplexGradesObject
-	gradesAnswerDataInt           int
-	gradesAnswerDataJson          []util.SimplerStudent
-	gradesAnswerDataRidicJson     util.Student
-	tagsQuestionDataArray         []util.Tag
-	tagsQuestionDataDict          map[string]string
-	tagsAnswerDictData            map[string]string
-	tagsAnswerArrayData           []util.Tag
-	prompt                        = "please do stuff!"
+	delay                          = 500
+	totalJsonToJsonFunctions       = 3
+	currentQuestionType            = util.SimplePeopleQuestions
+	currentFunctionType            string
+	personQuestionData             transforms.PureJson
+	personAnswerDataJson           transforms.PureJson
+	personAnswerDataString         string
+	personAnswerDataInt            int
+	purchaseQuestionData           transforms.PureJsonArrayPurchases
+	purchaseAnswerDataIntArray     []int
+	purchaseAnswerDataStringArray  []string
+	purchaseAnswerDataJsonArray    []util.FakePurchase
+	purchaseAnswerDataJsonVerified []util.FakePurchaseVerified
+	lotteryQuestionData            transforms.PureJsonArrayLottery
+	lotteryAnswerDataIntArray      []int
+	lotteryAnswerDataInt           int
+	lotteryAnswerDataJson          util.FakeLotteryPick
+	lotteryAnswerDataSmallerJson   []util.FakeLotteryPick
+	lotteryAnswerFreqDist          map[string]int
+	gradesQuestionData             util.ComplexGradesObject
+	gradesAnswerDataInt            int
+	gradesAnswerDataJson           []util.SimplerStudent
+	gradesAnswerDataRidicJson      util.Student
+	tagsQuestionDataArray          []util.Tag
+	tagsQuestionDataDict           map[string]string
+	tagsAnswerDictData             map[string]string
+	tagsAnswerArrayData            []util.Tag
+	prompt                         = "please do stuff!"
 )
 
 func generateLotteryPickQuestionData() transforms.PureJsonArrayLottery {
@@ -212,6 +214,12 @@ func generatePurchaseQuestion() (interface{}, error) {
 		mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []util.FakePurchase]{
 			Question: purchaseQuestionData,
 			Answer:   purchaseAnswerDataJsonArray,
+			Prompt:   prompt,
+		}
+	} else if currentFunctionType == jsonToElaboratedJson {
+		mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []util.FakePurchaseVerified]{
+			Question: purchaseQuestionData,
+			Answer:   purchaseAnswerDataJsonVerified,
 			Prompt:   prompt,
 		}
 	} else {
@@ -535,6 +543,8 @@ func generateNextQuestionAnswer() {
 			purchaseAnswerDataStringArray, prompt = transforms.GetAllArrayStringValues(purchaseQuestionData)
 		case jsonToJson:
 			purchaseAnswerDataJsonArray, prompt = transforms.GetFilteredByPurchasePrice(purchaseQuestionData)
+		case jsonToElaboratedJson:
+			purchaseAnswerDataJsonVerified, prompt = transforms.AddVerifiedToEachPurchase(purchaseQuestionData)
 		}
 	case util.SimpleGradesQuestions:
 		gradesQuestionData = generateGradesQuestionData()
@@ -592,6 +602,8 @@ func getAnswer(c *gin.Context) {
 			processAnswer[[]int](c, purchaseAnswerDataIntArray)
 		} else if currentFunctionType == jsonToJson {
 			processAnswer[[]util.FakePurchase](c, purchaseAnswerDataJsonArray)
+		} else if currentFunctionType == jsonToElaboratedJson {
+			processAnswer[[]util.FakePurchaseVerified](c, purchaseAnswerDataJsonVerified)
 		}
 	} else if currentQuestionType == util.SimplePeopleQuestions {
 		if currentFunctionType == jsonToString {

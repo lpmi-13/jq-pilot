@@ -50,28 +50,49 @@ jq '[.purchases[] | .PurchaseCurrency]'
 jq '[.purchases[] | select(.PurchasePrice > X)]'
 ```
 
+-   make all the purchases Verified
+
+```
+jq '[.purchases[] | . + {"Verified": true}]'
+```
+
+...or also
+
+```
+jq '.purchases | map(. + {"Verified": true})'
+```
+
 -   get all unique lottery picks
 
 ```
+
 jq '[.lotteryPicks[] | .numbers] | flatten | unique'
+
 ```
 
 -   find the first N lottery picks for each person
 
 ```
+
 jq '[.lotteryPicks[] | .numbers = .numbers[:N]]'
+
 ```
 
 -   find the last N lottery picks for each person
 
 ```
+
 jq '[.lotteryPicks[] | .numbers = .numbers[-N:]]'
+
 ```
 
 -   find out how frequently each lottery number was picked
 
 ```
+
 jq '[.lotteryPicks[] | .numbers] | flatten | map(tostring) | group_by(.) | map({(.[0]): length}) | add'
+
+```
 
 -   get the highest grade for each student in each subject
 
@@ -80,7 +101,6 @@ jq '[.lotteryPicks[] | .numbers] | flatten | map(tostring) | group_by(.) | map({
 jq '[.students[] | {name: .name, grades: { results: { art: .grades.results.art | max, history: .grades.results.history | max, math: .grades.results.math | max}}}]'
 
 ```
-
 
 -   turn a dictionary of key/value pairs into an array of labels/values ordered by label
 
@@ -93,4 +113,11 @@ jq 'to_entries | map({key: .key, label: .value}) | sort_by(.label)'
 -   turn an array of labels/values into a key/value dictionary
 
 jq 'map({ (.label): .value }) | add '
+
+```
+
+```
+
+```
+
 ```

@@ -193,6 +193,23 @@ func GetAllArrayIntValues(jsonInput PureJsonArrayPurchases) ([]int, string) {
 	return valuesArray, "get all the purchase codes"
 }
 
+func AddVerifiedToEachPurchase(jsonInput PureJsonArrayPurchases) ([]util.FakePurchaseVerified, string) {
+	justPurchases := jsonInput["purchases"]
+	newPurchases := make([]util.FakePurchaseVerified, len(justPurchases))
+
+	for i := range justPurchases {
+		// can't range over a struct...oh well
+		newPurchases[i].PurchaseCode = justPurchases[i].PurchaseCode
+		newPurchases[i].PurchaseCurrency = justPurchases[i].PurchaseCurrency
+		newPurchases[i].PurchaseID = justPurchases[i].PurchaseID
+		newPurchases[i].PurchaseItem = justPurchases[i].PurchaseItem
+		newPurchases[i].PurchasePrice = justPurchases[i].PurchasePrice
+		newPurchases[i].Verified = true
+	}
+
+	return newPurchases, "make all the purchases verified"
+}
+
 func GetFilteredByPurchasePrice(jsonInput PureJsonArrayPurchases) ([]util.FakePurchase, string) {
 	// hacky boolean to decide whether it's finding purchases above or below a certain price
 	filterForHigher := util.GenerateRandomBoolean()
@@ -313,7 +330,7 @@ func GetNRangePicks(jsonInput PureJsonArrayLottery) ([]util.FakeLotteryPick, str
 }
 
 func PickAWinner(jsonInput PureJsonArrayLottery) (util.FakeLotteryPick, string) {
-	// this is super basic just to practice adding fields to objects
+	// this is super basic just to practice updating fields in objects
 	rand.Seed(time.Now().UnixNano())
 	randomIndex := rand.Intn(len(jsonInput["lotteryPicks"]))
 

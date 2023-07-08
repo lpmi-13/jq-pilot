@@ -176,6 +176,16 @@ type FakePurchase struct {
 	PurchasePrice float64 `faker:"oneof: 1.99, 3.50, 10.81, 12.18, 19.99, 22.00, 25.50, 31.67, 38.50, 40.99, 45.00, 67.20, 69.99, 76.89, 85.15, 90.12"`
 }
 
+type FakePurchaseVerified struct {
+	PurchaseID       string
+	PurchaseCurrency string
+	PurchaseItem     string
+	PurchaseCode     int
+	PurchasePrice    float64
+	// this is the added field for the exercise
+	Verified bool
+}
+
 // previously using faker for this, but it sometimes output duplicate names
 type FakeLotteryPick struct {
 	Person  string `json:"person"`
