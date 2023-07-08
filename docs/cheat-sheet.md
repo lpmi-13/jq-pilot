@@ -62,6 +62,12 @@ jq '[.purchases[] | . + {"Verified": true}]'
 jq '.purchases | map(. + {"Verified": true})'
 ```
 
+-   make all purchase object keys lowercase
+
+```
+jq '[.purchases[] | with_entries( .key |= ascii_downcase)]'
+```
+
 -   get all unique lottery picks
 
 ```

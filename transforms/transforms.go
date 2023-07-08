@@ -210,6 +210,26 @@ func AddVerifiedToEachPurchase(jsonInput PureJsonArrayPurchases) ([]util.FakePur
 	return newPurchases, "make all the purchases verified"
 }
 
+func MakeAllFieldsLowercase(jsonInput PureJsonArrayPurchases) ([]map[string]any, string) {
+	justPurchases := jsonInput["purchases"]
+	newPurchases := make([]map[string]any, len(justPurchases))
+
+	for i := range justPurchases {
+		// there's definitely a function that would do this automaticaly, but this was quick and easy
+		intermediateMap := make(map[string]any)
+		// we need to cast this to float64 since golang expects all json to be floats
+		intermediateMap["purchasecode"] = float64(justPurchases[i].PurchaseCode)
+		intermediateMap["purchasecurrency"] = justPurchases[i].PurchaseCurrency
+		intermediateMap["purchaseid"] = justPurchases[i].PurchaseID
+		intermediateMap["purchaseitem"] = justPurchases[i].PurchaseItem
+		intermediateMap["purchaseprice"] = justPurchases[i].PurchasePrice
+
+		newPurchases[i] = intermediateMap
+	}
+
+	return newPurchases, "make all the keys lowercase"
+}
+
 func GetFilteredByPurchasePrice(jsonInput PureJsonArrayPurchases) ([]util.FakePurchase, string) {
 	// hacky boolean to decide whether it's finding purchases above or below a certain price
 	filterForHigher := util.GenerateRandomBoolean()
@@ -276,7 +296,7 @@ func GetAllUniqueArrayIntValues(jsonInput PureJsonArrayLottery) ([]int, string) 
 	uniqueValues := util.Unique(totalValuesArray)
 	// we do this to make the jq operations easier...since the `unique` native function in
 	// jq does a sort automatically, it's easier to just let users use it without needing
-	// to figure out how to do a unique without a sort, which is much more cumbersom
+	// to figure out how to do a unique without a sort, which is much more cumbersome
 	sort.Ints(uniqueValues)
 
 	return uniqueValues, "get all unique lottery pick numbers"
