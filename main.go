@@ -89,7 +89,7 @@ var (
 	tagsQuestionDataDict           map[string]string
 	tagsAnswerDictData             map[string]string
 	tagsAnswerArrayData            []util.Tag
-	prompt                         = "please do stuff!"
+	prompt                         string
 )
 
 func generateLotteryPickQuestionData() transforms.PureJsonArrayLottery {
