@@ -144,20 +144,20 @@ for a bit of object transformations, we can have something similar to the tags o
 ```
 [
   {
-    "label": "house",
-    "value": "lloyds pharmacy"
+    "label": "instance",
+    "value": "ada"
   },
   {
-    "label": "house_number",
-    "value": "105"
+    "label": "domain",
+    "value": "micromaterials"
   },
   {
-    "label": "road",
-    "value": "church road"
+    "label": "ID",
+    "value": "data"
   },
   {
-    "label": "postcode",
-    "value": "bn3 2af"
+    "label": "reference",
+    "value": "sisu"
   }
 ]
 ```
@@ -172,5 +172,3 @@ into...
   "postcode": "bn3 2af"
 }
 ```
-
-via some old `jq 'map({ (.label): .value }) | add '` magic (to be fair, that might be the only thing we practice, since it's too cool to not practice...maybe also do something with both `to_entries`, `with_entries`, and `from_entries`, cause I have no idea what they do)
