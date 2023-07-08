@@ -68,6 +68,12 @@ jq '.purchases | map(. + {"Verified": true})'
 jq '[.purchases[] | with_entries( .key |= ascii_downcase)]'
 ```
 
+-   group the purchases into higher and lower than N
+
+```
+jq '.purchases | {"high": group_by(.PurchasePrice > N)[1], "low": group_by(.PurchasePrice > N)[0]}'
+```
+
 -   get all unique lottery picks
 
 ```

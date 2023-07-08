@@ -230,12 +230,52 @@ func MakeAllFieldsLowercase(jsonInput PureJsonArrayPurchases) ([]map[string]any,
 	return newPurchases, "make all the keys lowercase"
 }
 
+// this is largely going to be a duplication of the function below it, but we'll get it working for now...
+func GetGroupByPurchasePrice(jsonInput PureJsonArrayPurchases) (util.FakePurchaseGrouped, string) {
+	var minPurchasePrice float64 = 1000
+
+	var maxPurchasePrice float64 = 0
+
+	justPurchases := jsonInput["purchases"]
+
+	for i := range justPurchases {
+		if justPurchases[i].PurchasePrice > maxPurchasePrice {
+			maxPurchasePrice = justPurchases[i].PurchasePrice
+		}
+
+		if justPurchases[i].PurchasePrice < minPurchasePrice {
+			minPurchasePrice = justPurchases[i].PurchasePrice
+		}
+	}
+
+	differenceBetweenMinMax := maxPurchasePrice - minPurchasePrice
+
+	middlePrice := maxPurchasePrice - (differenceBetweenMinMax / 2)
+
+	copiedArrayHigher := []util.FakePurchase{}
+	copiedArrayLower := []util.FakePurchase{}
+
+	for i := range justPurchases {
+		if jsonInput["purchases"][i].PurchasePrice > middlePrice {
+			copiedArrayHigher = append(copiedArrayHigher, jsonInput["purchases"][i])
+		} else {
+			copiedArrayLower = append(copiedArrayLower, jsonInput["purchases"][i])
+		}
+	}
+
+	var groupedArray util.FakePurchaseGrouped
+	groupedArray.HigherPrice = copiedArrayHigher
+	groupedArray.LowerPrice = copiedArrayLower
+
+	return groupedArray, fmt.Sprintf("group the purchases into higher and lower than %.2f", middlePrice)
+}
+
 func GetFilteredByPurchasePrice(jsonInput PureJsonArrayPurchases) ([]util.FakePurchase, string) {
 	// hacky boolean to decide whether it's finding purchases above or below a certain price
 	filterForHigher := util.GenerateRandomBoolean()
 
 	// hacky constant for now
-	var minPurchasePrice float64 = 100
+	var minPurchasePrice float64 = 1000
 
 	var maxPurchasePrice float64 = 0
 

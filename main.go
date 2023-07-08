@@ -31,6 +31,7 @@ const (
 	jsonToJson           = "jsonToJson"
 	jsonToElaboratedJson = "jsonToElaboratedJson"
 	jsonToLowercaseJson  = "jsonToLowercaseJson"
+	jsonToGroupedJson    = "jsonToGroupedJson"
 	// this just commemorates when I solved a particularly tricky jq slicing problem
 	jsonToRidicJson   = "jsonToRidicJson"
 	jsonToString      = "jsonToString"
@@ -47,7 +48,7 @@ var (
 		jsonToJson, jsonToString, jsonToInt,
 	}
 	purchaseFunctionTypesToCall = []string{
-		jsonToStringArray, jsonToIntArray, jsonToJson, jsonToElaboratedJson, jsonToLowercaseJson,
+		jsonToStringArray, jsonToIntArray, jsonToJson, jsonToElaboratedJson, jsonToLowercaseJson, jsonToGroupedJson,
 	}
 	lotteryFunctionTypesToCall = []string{
 		jsonToJson, jsonToIntArray, jsonToInt, jsonToSmallerJson, jsonToDict,
@@ -77,6 +78,7 @@ var (
 	purchaseAnswerDataJsonArray     []util.FakePurchase
 	purchaseAnswerDataJsonVerified  []util.FakePurchaseVerified
 	purchaseAnswerDataJsonLowercase []map[string]any
+	purchaseAnswerDataGrouped       util.FakePurchaseGrouped
 	lotteryQuestionData             transforms.PureJsonArrayLottery
 	lotteryAnswerDataIntArray       []int
 	lotteryAnswerDataInt            int
@@ -228,6 +230,12 @@ func generatePurchaseQuestion() (interface{}, error) {
 		mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []map[string]any]{
 			Question: purchaseQuestionData,
 			Answer:   purchaseAnswerDataJsonLowercase,
+			Prompt:   prompt,
+		}
+	} else if currentFunctionType == jsonToGroupedJson {
+		mixedResponse = JsonQuestion[map[string][]util.FakePurchase, util.FakePurchaseGrouped]{
+			Question: purchaseQuestionData,
+			Answer:   purchaseAnswerDataGrouped,
 			Prompt:   prompt,
 		}
 	} else {
@@ -555,6 +563,8 @@ func generateNextQuestionAnswer() {
 			purchaseAnswerDataJsonVerified, prompt = transforms.AddVerifiedToEachPurchase(purchaseQuestionData)
 		case jsonToLowercaseJson:
 			purchaseAnswerDataJsonLowercase, prompt = transforms.MakeAllFieldsLowercase(purchaseQuestionData)
+		case jsonToGroupedJson:
+			purchaseAnswerDataGrouped, prompt = transforms.GetGroupByPurchasePrice(purchaseQuestionData)
 		}
 	case util.SimpleGradesQuestions:
 		gradesQuestionData = generateGradesQuestionData()
@@ -616,6 +626,8 @@ func getAnswer(c *gin.Context) {
 			processAnswer[[]util.FakePurchaseVerified](c, purchaseAnswerDataJsonVerified)
 		} else if currentFunctionType == jsonToLowercaseJson {
 			processAnswer[[]map[string]any](c, purchaseAnswerDataJsonLowercase)
+		} else if currentFunctionType == jsonToGroupedJson {
+			processAnswer[util.FakePurchaseGrouped](c, purchaseAnswerDataGrouped)
 		}
 	} else if currentQuestionType == util.SimplePeopleQuestions {
 		if currentFunctionType == jsonToString {

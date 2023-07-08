@@ -167,6 +167,11 @@ func GeneratePossibleValue[T any](valuesArray []T) T {
 	return valuesArray[indexToChoose]
 }
 
+type FakePurchaseGrouped struct {
+	HigherPrice []FakePurchase `json:"high"`
+	LowerPrice  []FakePurchase `json:"low"`
+}
+
 type FakePurchase struct {
 	PurchaseID       string `faker:"uuid_digit"`
 	PurchaseCurrency string `faker:"currency"`
@@ -315,8 +320,8 @@ func GenerateLotteryPicks() []FakeLotteryPick {
 func GeneratePurchaseList() []FakePurchase {
 	rand.Seed(time.Now().UnixNano())
 
-	// hacking this so we always have at least 2 purchases...for now
-	numberOfPurchases := rand.Intn(4) + 2
+	// hacking this so we always have at least 3 purchases...for now
+	numberOfPurchases := rand.Intn(3) + 3
 	purchasesArray := make([]FakePurchase, numberOfPurchases)
 
 	for i := 0; i < numberOfPurchases; i++ {
