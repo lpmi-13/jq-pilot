@@ -68,6 +68,12 @@ jq '[.students[] | {name: .name, grades: { results: { art: .grades.results.art |
 jq '[.lotteryPicks[] | .numbers = .numbers[:N]]'
 ```
 
+-   find the last N lottery picks for each person
+
+```
+jq '[.lotteryPicks[] | .numbers = .numbers[-N:]]'
+```
+
 -   turn a dictionary of key/value pairs into an array of labels/values ordered by label
 
 ```

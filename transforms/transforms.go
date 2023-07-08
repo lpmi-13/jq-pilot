@@ -278,8 +278,8 @@ func GetNumberOfPicks(jsonInput PureJsonArrayLottery) (int, string) {
 // separate functions
 func GetNRangePicks(jsonInput PureJsonArrayLottery) ([]util.FakeLotteryPick, string) {
 	rand.Seed(time.Now().UnixNano())
-	// just hardcode this, since we want at least 2 and not more than 5
-	randomNumberOfPicks := rand.Intn(3) + 2
+	// just hardcode this, since we want at least 2 and not more than 4
+	randomNumberOfPicks := rand.Intn(3) + 1
 	updatedArray := make([]util.FakeLotteryPick, len(jsonInput["lotteryPicks"]))
 
 	rangeFromBeginning := util.GenerateRandomBoolean()
@@ -296,15 +296,20 @@ func GetNRangePicks(jsonInput PureJsonArrayLottery) ([]util.FakeLotteryPick, str
 		updatedArray[i].Numbers = numberOfPicks
 	}
 
-	// my kingdom for a ternary!
 	var modifier string
+
+	var picksPrompt int
+
+	// my kingdom for a ternary!
 	if rangeFromBeginning {
 		modifier = "first"
+		picksPrompt = randomNumberOfPicks
 	} else {
 		modifier = "last"
+		picksPrompt = randomNumberOfPicks + 1
 	}
 
-	return updatedArray, fmt.Sprintf("find the %s %d picks for each person", modifier, randomNumberOfPicks)
+	return updatedArray, fmt.Sprintf("find the %s %d picks for each person", modifier, picksPrompt)
 }
 
 func PickAWinner(jsonInput PureJsonArrayLottery) (util.FakeLotteryPick, string) {
