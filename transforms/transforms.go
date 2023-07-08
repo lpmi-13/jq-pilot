@@ -330,17 +330,13 @@ func PickAWinner(jsonInput PureJsonArrayLottery) (util.FakeLotteryPick, string) 
 	return winner, fmt.Sprintf("make %s the winner", winner.Person)
 }
 
-// get a function for the lottery data that outputs how often each number was chosen, a la
-// $ echo '["a", "b", "a"]' | jq -c 'group_by(.) | map({(.[0]): length}) | add'
-// {"a":2, "b":1}
-// from https://andrew.gibiansky.com/blog/command-line/jq-primer/
 func GetLotteryPickFrequencyDistribution(jsonInput PureJsonArrayLottery) (map[string]int, string) {
 	var totalNumbers []int
 
 	for i := range jsonInput["lotteryPicks"] {
 		numbers := jsonInput["lotteryPicks"][i].Numbers
-		for number := range numbers {
-			totalNumbers = append(totalNumbers, number)
+		for numberIndex := range numbers {
+			totalNumbers = append(totalNumbers, numbers[numberIndex])
 		}
 	}
 

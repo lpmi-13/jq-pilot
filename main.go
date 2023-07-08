@@ -48,7 +48,7 @@ var (
 		jsonToStringArray, jsonToIntArray, jsonToJson,
 	}
 	lotteryFunctionTypesToCall = []string{
-		jsonToJson, jsonToIntArray, jsonToInt, jsonToSmallerJson,
+		jsonToJson, jsonToIntArray, jsonToInt, jsonToSmallerJson, jsonToDict,
 	}
 	gradesFunctionTypesToCall = []string{
 		jsonToInt, jsonToJson, jsonToRidicJson,
