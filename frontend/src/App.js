@@ -50,38 +50,41 @@ function App() {
 
     return (
         <Fragment>
-            {wsQuestion ? (
-                <Fragment>
-                    <div className="App">
-                        <h2>{wsPrompt}</h2>
-                    </div>
-                    <div className="flexblock">
-                        <div className="codeblock">
-                            <pre>{formatter.Serialize(wsQuestion)}</pre>
-                        </div>
-                        <div className="arrow">{`=>`}</div>
-                        <div className="codeblock">
-                            <pre>
-                                {/* we need something smarter to determine if
+            <div className={`App ${wsQuestion ? "visible" : "invisible"}`}>
+                <h2>{wsPrompt}</h2>
+            </div>
+            <h3 className={`loading ${wsQuestion ? "undisplay" : "visible"}`}>
+                LOADING...
+            </h3>
+            <div
+                className={`flexblock ${wsQuestion ? "visible" : "invisible"}`}
+            >
+                <div className="codeblock">
+                    <pre>{formatter.Serialize(wsQuestion)}</pre>
+                </div>
+                <div className="arrow">{`=>`}</div>
+                <div className="codeblock">
+                    <pre>
+                        {/* we need something smarter to determine if
                                 we should ask for the user to pass a quoted string
                                 or just the raw value, but this will do for now */}
-                                {(typeof wsAnswer === "string") |
-                                (typeof wsAnswer === "number")
-                                    ? wsAnswer
-                                    : formatter.Serialize(wsAnswer)}
-                            </pre>
-                        </div>
-                    </div>
-                    <div className="codeblock instructions">
-                        Try to transform the structure from{" "}
-                        <pre>{currentDomain}/question</pre>
-                        into the filtered data and send it to{" "}
-                        <pre>{currentDomain}/answer</pre>
-                    </div>
-                </Fragment>
-            ) : (
-                <h3 className="loading">LOADING...</h3>
-            )}
+                        {(typeof wsAnswer === "string") |
+                        (typeof wsAnswer === "number")
+                            ? wsAnswer
+                            : formatter.Serialize(wsAnswer)}
+                    </pre>
+                </div>
+            </div>
+            <div
+                className={`codeblock instructions ${
+                    wsQuestion ? "visible" : "invisible"
+                }`}
+            >
+                Try to transform the structure from{" "}
+                <pre>{currentDomain}/question</pre>
+                into the filtered data and send it to{" "}
+                <pre>{currentDomain}/answer</pre>
+            </div>
         </Fragment>
     );
 }

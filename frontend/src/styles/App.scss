@@ -2,22 +2,48 @@
 
 .App {
     text-align: center;
+    font-size: 1.1rem;
+
+    @include respond-to("mobile") {
+        font-size: 1.35rem;
+    }
+
+    @include respond-to("small") {
+        font-size: 1.45rem;
+    }
+
+    @include respond-to("medium") {
+        font-size: 1.6rem;
+    }
 }
 
 .container {
-    font-size: 1rem;
+    font-size: 0.85rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
 
-    padding: 2em;
-
-    @include respond-to("small") {
-        // this is everything bigger than "small"
+    @include respond-to("mobile") {
+        // this is everything bigger than "mobile"
         font-size: 1rem;
         margin: 1.5em;
     }
+
+    @include respond-to("small") {
+        font-size: 1.3rem;
+    }
+
+    @include respond-to("medium") {
+        font-size: 1.65rem;
+    }
+}
+
+.invisible {
+    visibility: hidden;
+}
+
+.undisplay {
+    display: none;
 }
 
 .codeblock pre {
@@ -27,8 +53,20 @@
 
     border-radius: 0.5em;
     box-shadow: 0px 14px 25px #000000;
+    @include respond-to("mobile") {
+        font-size: 0.8rem;
+    }
+
     @include respond-to("small") {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+    }
+
+    @include respond-to("medium") {
+        font-size: 1.1rem;
+    }
+
+    @include respond-to("large") {
+        font-size: 1.25rem;
     }
 }
 
@@ -50,8 +88,20 @@
     align-items: center;
     font-size: 1rem;
 
+    @include respond-to("mobile") {
+        font-size: 1.1rem;
+    }
+
     @include respond-to("small") {
+        font-size: 1.2rem;
+    }
+
+    @include respond-to("medium") {
         font-size: 1.25rem;
+    }
+
+    @include respond-to("large") {
+        font-size: 1.4rem;
     }
 }
 
@@ -59,14 +109,49 @@
     margin: 0.5em;
     transform: rotate(90deg);
     font-size: 2rem;
+    @include respond-to("mobile") {
+        font-size: 3.75rem;
+        transform: rotate(0deg);
+    }
+
     @include respond-to("small") {
-        font-size: 4rem;
+        font-size: 4.25rem;
+        transform: rotate(0deg);
+    }
+
+    @include respond-to("medium") {
+        font-size: 5rem;
+        transform: rotate(0deg);
+    }
+
+    @include respond-to("large") {
+        font-size: 5.5rem;
         transform: rotate(0deg);
     }
 }
 
 .loading {
     text-align: center;
+    max-height: 100vh;
+    height: 100vh;
+
+    font-size: 1.2rem;
+
+    @include respond-to("mobile") {
+        font-size: 1.45rem;
+    }
+
+    @include respond-to("small") {
+        font-size: 1.5rem;
+    }
+
+    @include respond-to("medium") {
+        font-size: 1.65rem;
+    }
+
+    @include respond-to("large") {
+        font-size: 1.8rem;
+    }
 }
 
 .instructions {
@@ -75,4 +160,20 @@
     justify-content: center;
     font-size: 1.2rem;
     margin: 1em 5em;
+
+    @include respond-to("mobile") {
+        font-size: 1.35rem;
+    }
+
+    @include respond-to("small") {
+        font-size: 1.45rem;
+    }
+
+    @include respond-to("medium") {
+        font-size: 1.6rem;
+    }
+
+    @include respond-to("large") {
+        font-size: 1.85rem;
+    }
 }
