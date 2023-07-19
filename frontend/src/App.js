@@ -50,7 +50,7 @@ function App() {
 
     return (
         <Fragment>
-            <div className={`App ${wsQuestion ? "visible" : "invisible"}`}>
+            <div className={`center ${wsQuestion ? "visible" : "invisible"}`}>
                 <h2>{wsPrompt}</h2>
             </div>
             <h3 className={`loading ${wsQuestion ? "undisplay" : "visible"}`}>

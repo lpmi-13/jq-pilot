@@ -1,20 +1,7 @@
 @import "./mixins.scss";
 
-.App {
+.center {
     text-align: center;
-    font-size: 1.1rem;
-
-    @include respond-to("mobile") {
-        font-size: 1.35rem;
-    }
-
-    @include respond-to("small") {
-        font-size: 1.45rem;
-    }
-
-    @include respond-to("medium") {
-        font-size: 1.6rem;
-    }
 }
 
 .container {
@@ -30,11 +17,11 @@
     }
 
     @include respond-to("small") {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
     }
 
     @include respond-to("medium") {
-        font-size: 1.65rem;
+        font-size: 1.35rem;
     }
 }
 
