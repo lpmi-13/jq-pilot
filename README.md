@@ -57,6 +57,12 @@ docker build -t jq-pilot --build-arg ENV=local .
 docker run -it --rm -p 8000:8000 jq-pilot
 ```
 
+### The Gitpod Way
+
+Due to recent updates in the way that Gitpod deals with SSL certs for their cloud-based environments, jq-pilot now works out of the box opening a secure websocket on startup.
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/lpmi-13/jq-pilot)
+
 ### Doing the exercises
 
 The recommended way to interact with this is to use `curl` in a terminal, but feel free to interact with the endpoint via the tool of your choice!
