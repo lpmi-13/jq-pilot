@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Formatter, FracturedJsonOptions } from "fracturedjsonjs";
 import "./styles/App.scss";
 
@@ -33,13 +33,17 @@ function App() {
     const [wsAnswer, setWsAnswer] = useState(null);
     const [wsPrompt, setWsPrompt] = useState(null);
 
-    // probably just do this once on startup, and then after that just wait for a push
-    setInterval(() => {
-        if (!isOpen(ws)) {
-            return;
-        }
-        ws.send("update");
-    }, 2000);
+    useEffect(() => {
+        // probably better to do this once on startup and then just wait for pushes
+        const intervalId = setInterval(() => {
+            if (!isOpen(ws)) {
+                return;
+            }
+            ws.send("update");
+        }, 2000);
+
+        return () => clearInterval(intervalId);
+    });
 
     ws.onmessage = ({ data }) => {
         const { answer, prompt, question } = JSON.parse(data);
