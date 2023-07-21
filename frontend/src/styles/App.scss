@@ -121,19 +121,3 @@ html {
         font-size: 1.15rem;
     }
 }
-
-.instructions {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    font-size: 1rem;
-    margin: 1em 5em;
-
-    @include respond-to("mobile") {
-        font-size: 1.15rem;
-    }
-
-    @include respond-to("small") {
-        font-size: 1.25rem;
-    }
-}
