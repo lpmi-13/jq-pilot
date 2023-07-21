@@ -107,7 +107,7 @@ jq '[.students[] | {name: .name, grades: { results: { art: .grades.results.art |
 -   turn a dictionary of key/value pairs into an array of labels/values ordered by label
 
 ```
-jq 'to_entries | map({key: .key, label: .value}) | sort_by(.label)'
+jq 'to_entries | map({label: .key, value: .value}) | sort_by(.label)'
 ```
 
 -   turn an array of labels/values into a key/value dictionary
