@@ -113,6 +113,8 @@ html {
 
     font-size: 0.75rem;
 
+    height: 100vh;
+
     @include respond-to("mobile") {
         font-size: 0.9rem;
     }
