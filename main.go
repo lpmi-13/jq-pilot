@@ -444,6 +444,7 @@ func main() {
 
 	router.GET("/question", getQuestion)
 	router.POST("/answer", getAnswer)
+	router.GET("/prompt", getPrompt)
 
 	// for no matching routes
 	router.NoRoute(func(ctx *gin.Context) { ctx.JSON(http.StatusNotFound, gin.H{}) })
@@ -611,6 +612,10 @@ func processAnswer[T any](context *gin.Context, expectedAnswer T) {
 		log.Println("wrong answer, please try again")
 		context.JSON(http.StatusBadRequest, gin.H{"message": "wrong answer, please try again"})
 	}
+}
+
+func getPrompt(c *gin.Context) {
+	c.IndentedJSON(http.StatusOK, prompt)
 }
 
 func getAnswer(c *gin.Context) {

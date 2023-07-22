@@ -77,6 +77,8 @@ Helpful tip: if you want to pipe something into curl, you can do the following:
 $ curl localhost:8000/question | jq DO_STUFF_HERE | curl -d @- localhost:8000/answer
 ```
 
+I added a `/prompt` endpoint to the webserver just in case you want to try and interact with this only via the command line, though it doesn't necessarily tell you what was wrong about a wrong answer, only that it wasn't correct, so this endpoint might have limited value.
+
 ## Development
 
 If you just wanna hack on the gin webserver, you can run go with `nodemon` to get live reloading on code changes, which is hashtag delicious!
