@@ -2,7 +2,7 @@
 
 Inspired by the `jq` wizardry of @csibar and @thomas-franklin, I decided I needed a micromaterial to up my jq game, so I made this to generate learning exercises for myself.
 
-live at https://jkew.party
+live at https://jkew.party (and also https://jayq.party, since I couldn't decide which name I like more).
 
 > but also, since https://jkew.party is currently hosted on railway, their free tier runs out after 21 days, so if it's after the 21st of the month, check it out at https://jq-pilot.fly.dev
 
