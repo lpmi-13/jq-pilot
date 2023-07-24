@@ -26,12 +26,6 @@ jq '.key | length'
 jq '.students[] | select(.name == "STUDENT_NAME") | .grades.results.history | max'
 ```
 
--   get the top scores for each student in each subject
-
-```
-jq '.students[] |
-```
-
 -   pick one lottery contestant to be the winner
 
 ```
