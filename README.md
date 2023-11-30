@@ -2,9 +2,8 @@
 
 Inspired by the `jq` wizardry of @csibar and @thomas-franklin, I decided I needed a micromaterial to up my jq game, so I made this to generate learning exercises for myself.
 
-~live at https://jkew.party (and also https://jayq.party, since I couldn't decide which name I like more).~
+live at https://jkew.party (and also https://jayq.party, since I couldn't decide which name I like more).
 
-The DNS is currently not playing very nice, and I've got other stuff to do on this hackday, so just go to https://jq-pilot.onrender.com
 
 ## The exercises
 
