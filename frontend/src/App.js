@@ -18,7 +18,8 @@ const ws = new WebSocket(
 );
 
 const currentDomain =
-    process.env.REACT_APP_ENV === "production"
+    // using localhost is easier when running this in gitpod, so we just use that
+    process.env.REACT_APP_ENV === "production" && !window.location.origin.endsWith("gitpod.io")
         ? window.location.origin
         : "localhost:8000";
 
