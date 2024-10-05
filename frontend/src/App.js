@@ -1,27 +1,12 @@
-import { Fragment, useEffect, useState } from "react";
-import { Formatter, FracturedJsonOptions } from "fracturedjsonjs";
-import "./styles/App.scss";
-
-const isOpen = (ws) => {
-    return ws.readyState === ws.OPEN;
-};
-
-const currentHost =
-    process.env.REACT_APP_ENV === "production"
-        ? window.location.host
-        : "localhost:8000";
-
-const ws = new WebSocket(
-    `${
-        process.env.REACT_APP_ENV === "production" ? "wss" : "ws"
-    }://${currentHost}/ws`
-);
+import { Fragment, useEffect, useState } from 'react';
+import { Formatter, FracturedJsonOptions } from 'fracturedjsonjs';
+import './styles/App.scss';
 
 const currentDomain =
-    // using localhost is easier when running this in gitpod, so we just use that
-    process.env.REACT_APP_ENV === "production" && !window.location.origin.endsWith("gitpod.io")
+    process.env.REACT_APP_ENV === 'production' &&
+    !window.location.origin.endsWith('gitpod.io')
         ? window.location.origin
-        : "localhost:8000";
+        : 'http://localhost:8000';
 
 const formatter = new Formatter();
 const options = new FracturedJsonOptions();
@@ -30,64 +15,79 @@ options.IndentSpaces = 2;
 formatter.Options = options;
 
 function App() {
-    const [wsQuestion, setWsQuestion] = useState(null);
-    const [wsAnswer, setWsAnswer] = useState(null);
-    const [wsPrompt, setWsPrompt] = useState(null);
+    const [question, setQuestion] = useState(null);
+    const [answer, setAnswer] = useState(null);
+    const [prompt, setPrompt] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        // probably better to do this once on startup and then just wait for pushes
-        const intervalId = setInterval(() => {
-            if (!isOpen(ws)) {
-                return;
+        const eventSource = new EventSource(`${currentDomain}/sse`);
+
+        eventSource.onopen = (event) => {
+            console.log('SSE connection opened:', event);
+            setError(null);
+        };
+
+        eventSource.onmessage = (event) => {
+            console.log({ event });
+            console.log('Received SSE message:', event.data);
+            try {
+                const { answer, prompt, question } = JSON.parse(event.data);
+                setAnswer(answer);
+                setQuestion(question);
+                setPrompt(prompt);
+                setIsLoading(false);
+            } catch (err) {
+                console.error('Error parsing SSE message:', err);
+                setError('Error parsing server message');
             }
-            ws.send("update");
-        }, 2000);
+        };
 
-        return () => clearInterval(intervalId);
-    });
+        eventSource.onerror = (error) => {
+            console.error('EventSource failed:', error);
+            setError(`SSE Error: ${error.message || 'Unknown error'}`);
+            setIsLoading(true);
+            eventSource.close();
+        };
 
-    ws.onmessage = ({ data }) => {
-        const { answer, prompt, question } = JSON.parse(data);
-        setWsAnswer(answer);
-        setWsQuestion(question);
-        setWsPrompt(prompt);
-    };
+        return () => {
+            console.log('Closing SSE connection');
+            eventSource.close();
+        };
+    }, []);
 
     return (
         <Fragment>
-            <div className={`center ${wsQuestion ? "visible" : "invisible"}`}>
-                <div>{wsPrompt}</div>
+            {error && <div className="error">{error}</div>}
+            <div className={`center ${question ? 'visible' : 'invisible'}`}>
+                <div>{prompt}</div>
             </div>
-            <h3 className={`loading ${wsQuestion ? "undisplay" : "visible"}`}>
+            <h3 className={`loading ${isLoading ? 'visible' : 'undisplay'}`}>
                 LOADING...
             </h3>
-            <div
-                className={`flexblock ${wsQuestion ? "visible" : "invisible"}`}
-            >
+            <div className={`flexblock ${question ? 'visible' : 'invisible'}`}>
                 <div className="codeblock">
-                    <pre>{formatter.Serialize(wsQuestion)}</pre>
+                    <pre>{formatter.Serialize(question)}</pre>
                 </div>
                 <div className="arrow">{`=>`}</div>
                 <div className="codeblock">
                     <pre>
-                        {/* we need something smarter to determine if
-                                we should ask for the user to pass a quoted string
-                                or just the raw value, but this will do for now */}
-                        {(typeof wsAnswer === "string") |
-                        (typeof wsAnswer === "number")
-                            ? wsAnswer
-                            : formatter.Serialize(wsAnswer)}
+                        {typeof answer === 'string' ||
+                        typeof answer === 'number'
+                            ? answer
+                            : formatter.Serialize(answer)}
                     </pre>
                 </div>
             </div>
             <div
                 className={`codeblock instructions ${
-                    wsQuestion ? "visible" : "invisible"
+                    question ? 'visible' : 'invisible'
                 }`}
             >
-                Try to transform the structure from{" "}
+                Try to transform the structure from{' '}
                 <pre>{currentDomain}/question</pre>
-                into the filtered data and send it to{" "}
+                into the filtered data and send it to{' '}
                 <pre>{currentDomain}/answer</pre>
             </div>
         </Fragment>

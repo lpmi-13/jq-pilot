@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"flag"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -12,10 +14,10 @@ import (
 	"jq-pilot/transforms"
 	"jq-pilot/util"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/go-test/deep"
-	"github.com/gorilla/websocket"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -344,120 +346,128 @@ func generateLotteryQuestion() (interface{}, error) {
 func main() {
 	generateNextQuestionAnswer()
 
-	// using standard library "flag" package
 	flag.String("MODE", "dev", "whether we're running in dev or production mode")
 
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
 	viper.BindPFlags(pflag.CommandLine)
 
-	MODE := viper.GetString("MODE") // retrieve value from viper
+	MODE := viper.GetString("MODE")
 
-	// don't bother overriding the mode when developing locally
 	viper.SetDefault("PORT", "8000")
 
-	// this is two different checks for MODE == "prod", because we need to set the mode
-	// before we initialize the router, but we can't call router.Use until after we initialize the router
 	if MODE == "prod" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	router := gin.Default()
 
-	// Serve static files to frontend if server is started in production environment
+    config := cors.DefaultConfig()
+    config.AllowOrigins = []string{"http://localhost:3000", "http://localhost:8000"}
+    config.AllowMethods = []string{"GET", "POST", "OPTIONS"}
+    config.AllowHeaders = []string{"Origin", "Content-Type", "Accept"}
+    config.ExposeHeaders = []string{"Content-Length"}
+    config.AllowCredentials = true
+    router.Use(cors.New(config))
+
 	if MODE == "prod" {
 		router.Use(static.Serve("/", static.LocalFile("./build", true)))
 	}
 
 	router.SetTrustedProxies(nil)
 
-	// the websocket stuff
-	router.GET("/ws", func(c *gin.Context) {
-		ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-		if err != nil {
-			log.Println(err)
-
-			return
-		}
-		defer ws.Close()
-		for {
-			mt, message, err := ws.ReadMessage()
-			if err != nil {
-				log.Println(err)
-
-				break
-			}
-			var response []byte
-			if string(message) == "update" {
-				var mixedResponse interface{}
-				if currentQuestionType == util.SimplePeopleQuestions {
-					mixedResponse, err = generatePeopleQuestion()
-					if err != nil {
-						log.Fatal(err)
-					}
-				} else if currentQuestionType == util.SimplePurchaseQuestions {
-					mixedResponse, err = generatePurchaseQuestion()
-					if err != nil {
-						log.Fatal(err)
-					}
-				} else if currentQuestionType == util.SimpleLotteryQuestions {
-					mixedResponse, err = generateLotteryQuestion()
-					if err != nil {
-						log.Fatal(err)
-					}
-				} else if currentQuestionType == util.SimpleGradesQuestions {
-					mixedResponse, err = generateGradesQuestion()
-					if err != nil {
-						log.Fatal(err)
-					}
-				} else if currentQuestionType == util.SimpleTagsQuestionsArrayToDict {
-					mixedResponse, err = generateTagsQuestionArray()
-					if err != nil {
-						log.Fatal(err)
-					}
-				} else if currentQuestionType == util.SimpleTagsQuestionsDictToArray {
-					mixedResponse, err = generateTagsQuestionDict()
-					if err != nil {
-						log.Fatal(err)
-					}
-				} else {
-					log.Fatal("couldn't get question type")
-				}
-
-				response, err = json.Marshal(mixedResponse)
-				if err != nil {
-					log.Println("could not marshall json")
-				}
-				err = ws.WriteMessage(mt, response)
-				if err != nil {
-					log.Println(err)
-
-					break
-				}
-
-				time.Sleep(time.Duration(delay) * time.Millisecond)
-			} else {
-				log.Fatal("no dice")
-			}
-		}
-	})
+	router.GET("/sse", handleSSE)
 
 	router.GET("/question", getQuestion)
 	router.POST("/answer", getAnswer)
 	router.GET("/prompt", getPrompt)
 
-	// for no matching routes
 	router.NoRoute(func(ctx *gin.Context) { ctx.JSON(http.StatusNotFound, gin.H{}) })
 
 	port := viper.GetString("PORT")
 	router.Run(":" + port)
 }
 
-var upgrader = websocket.Upgrader{
-	// this is just to set the upgrade to succeed
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
+func handleSSE(c *gin.Context) {
+    c.Header("Content-Type", "text/event-stream")
+    c.Header("Cache-Control", "no-cache")
+    c.Header("Connection", "keep-alive")
+    c.Header("Access-Control-Allow-Origin", "*")
+	
+    // Flush headers
+    c.Writer.Flush()
+
+    ctx, cancel := context.WithCancel(c.Request.Context())
+    defer cancel()
+
+    clientChan := make(chan string)
+    defer close(clientChan)
+
+    go func() {
+        defer cancel()
+        for {
+            select {
+            case <-ctx.Done():
+                return
+            case <-time.After(time.Duration(delay) * time.Millisecond):
+                mixedResponse, err := generateMixedResponse()
+                if err != nil {
+                    log.Println("Error generating mixed response:", err)
+                    continue
+                }
+
+                response, err := json.Marshal(mixedResponse)
+                if err != nil {
+                    log.Println("Error marshalling JSON:", err)
+                    continue
+                }
+
+                select {
+                case clientChan <- string(response):
+                case <-ctx.Done():
+                    return
+                }
+            }
+        }
+    }()
+
+    c.Stream(func(w io.Writer) bool {
+        select {
+        case msg := <-clientChan:
+            c.SSEvent("message", msg)
+            return true
+        case <-ctx.Done():
+            return false
+        }
+    })
+}
+
+func generateMixedResponse() (interface{}, error) {
+	var mixedResponse interface{}
+	var err error
+
+	switch currentQuestionType {
+	case util.SimplePeopleQuestions:
+		mixedResponse, err = generatePeopleQuestion()
+	case util.SimplePurchaseQuestions:
+		mixedResponse, err = generatePurchaseQuestion()
+	case util.SimpleLotteryQuestions:
+		mixedResponse, err = generateLotteryQuestion()
+	case util.SimpleGradesQuestions:
+		mixedResponse, err = generateGradesQuestion()
+	case util.SimpleTagsQuestionsArrayToDict:
+		mixedResponse, err = generateTagsQuestionArray()
+	case util.SimpleTagsQuestionsDictToArray:
+		mixedResponse, err = generateTagsQuestionDict()
+	default:
+		return nil, errors.New("couldn't get question type")
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return mixedResponse, nil
 }
 
 // this is crap and should be more general
