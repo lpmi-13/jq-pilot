@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"math/rand"
 	"net/http"
+	"sync"
 	"time"
 
 	"jq-pilot/transforms"
@@ -374,7 +376,15 @@ func main() {
 		router.Use(static.Serve("/", static.LocalFile("./build", true)))
 	}
 
-	router.SetTrustedProxies(nil)
+
+	// Add OPTIONS handler for the SSE endpoint
+    router.OPTIONS("/sse", func(c *gin.Context) {
+        c.Header("Access-Control-Allow-Origin", "*")
+        c.Header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        c.Header("Access-Control-Allow-Headers", "Content-Type")
+        c.Header("Access-Control-Max-Age", "86400") // 24 hours
+        c.Status(http.StatusOK)
+    })
 
 	router.GET("/sse", handleSSE)
 
@@ -382,20 +392,63 @@ func main() {
 	router.POST("/answer", getAnswer)
 	router.GET("/prompt", getPrompt)
 
+	router.SetTrustedProxies(nil)
 	router.NoRoute(func(ctx *gin.Context) { ctx.JSON(http.StatusNotFound, gin.H{}) })
 
 	port := viper.GetString("PORT")
 	router.Run(":" + port)
 }
 
+var (
+    clientsMutex sync.Mutex
+    clients      []chan struct{}
+)
+
+func registerClient(ch chan struct{}) {
+    clientsMutex.Lock()
+    defer clientsMutex.Unlock()
+    clients = append(clients, ch)
+}
+
+func unregisterClient(ch chan struct{}) {
+    clientsMutex.Lock()
+    defer clientsMutex.Unlock()
+    for i, c := range clients {
+        if c == ch {
+            clients = append(clients[:i], clients[i+1:]...)
+            break
+        }
+    }
+}
+
+func notifyStateChange() {
+    clientsMutex.Lock()
+    defer clientsMutex.Unlock()
+    for _, ch := range clients {
+        select {
+        case ch <- struct{}{}:
+        default:
+            // If the channel is full, we skip this client
+        }
+    }
+}
+
 func handleSSE(c *gin.Context) {
-    c.Header("Content-Type", "text/event-stream")
+	c.Header("Content-Type", "text/event-stream")
     c.Header("Cache-Control", "no-cache")
     c.Header("Connection", "keep-alive")
     c.Header("Access-Control-Allow-Origin", "*")
-	
+    c.Header("Access-Control-Allow-Headers", "Content-Type")
+    c.Header("Access-Control-Allow-Credentials", "true")
+    
     // Flush headers
-    c.Writer.Flush()
+    // c.Writer.Flush()
+	fmt.Println("we got here")
+
+	// Send an immediate test event
+    c.SSEvent("message", "Connected to SSE")
+
+	fmt.Println("we also got here")
 
     ctx, cancel := context.WithCancel(c.Request.Context())
     defer cancel()
@@ -403,13 +456,22 @@ func handleSSE(c *gin.Context) {
     clientChan := make(chan string)
     defer close(clientChan)
 
+    // Create a channel to receive state updates
+    stateChan := make(chan struct{})
+    defer close(stateChan)
+
+    // Register this client's channel to receive state updates
+    registerClient(stateChan)
+    defer unregisterClient(stateChan)
+
     go func() {
         defer cancel()
         for {
             select {
             case <-ctx.Done():
                 return
-            case <-time.After(time.Duration(delay) * time.Millisecond):
+            case <-stateChan:
+                // State has changed, generate and send new response
                 mixedResponse, err := generateMixedResponse()
                 if err != nil {
                     log.Println("Error generating mixed response:", err)
@@ -604,6 +666,7 @@ func generateNextQuestionAnswer() {
 			tagsAnswerArrayData, prompt = transforms.GetArrayFromDict(tagsQuestionDataDict)
 		}
 	}
+	notifyStateChange()
 }
 
 func processAnswer[T any](context *gin.Context, expectedAnswer T) {

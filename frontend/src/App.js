@@ -19,20 +19,14 @@ function App() {
     const [answer, setAnswer] = useState(null);
     const [prompt, setPrompt] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
 
     useEffect(() => {
+        console.log({ currentDomain });
         const eventSource = new EventSource(`${currentDomain}/sse`);
 
-        eventSource.onopen = (event) => {
-            console.log('SSE connection opened:', event);
-            setError(null);
-        };
-
         eventSource.onmessage = (event) => {
-            console.log({ event });
-            console.log('Received SSE message:', event.data);
             try {
+                console.log({ event });
                 const { answer, prompt, question } = JSON.parse(event.data);
                 setAnswer(answer);
                 setQuestion(question);
@@ -40,26 +34,21 @@ function App() {
                 setIsLoading(false);
             } catch (err) {
                 console.error('Error parsing SSE message:', err);
-                setError('Error parsing server message');
             }
         };
 
         eventSource.onerror = (error) => {
             console.error('EventSource failed:', error);
-            setError(`SSE Error: ${error.message || 'Unknown error'}`);
-            setIsLoading(true);
             eventSource.close();
         };
 
         return () => {
-            console.log('Closing SSE connection');
             eventSource.close();
         };
     }, []);
 
     return (
         <Fragment>
-            {error && <div className="error">{error}</div>}
             <div className={`center ${question ? 'visible' : 'invisible'}`}>
                 <div>{prompt}</div>
             </div>
