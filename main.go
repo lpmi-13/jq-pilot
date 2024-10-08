@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"math/rand"
@@ -376,13 +375,11 @@ func main() {
 		router.Use(static.Serve("/", static.LocalFile("./build", true)))
 	}
 
-
-	// Add OPTIONS handler for the SSE endpoint
     router.OPTIONS("/sse", func(c *gin.Context) {
         c.Header("Access-Control-Allow-Origin", "*")
         c.Header("Access-Control-Allow-Methods", "GET, OPTIONS")
         c.Header("Access-Control-Allow-Headers", "Content-Type")
-        c.Header("Access-Control-Max-Age", "86400") // 24 hours
+        c.Header("Access-Control-Max-Age", "86400")
         c.Status(http.StatusOK)
     })
 
@@ -434,21 +431,12 @@ func notifyStateChange() {
 }
 
 func handleSSE(c *gin.Context) {
-	c.Header("Content-Type", "text/event-stream")
+    c.Header("Content-Type", "text/event-stream")
     c.Header("Cache-Control", "no-cache")
     c.Header("Connection", "keep-alive")
     c.Header("Access-Control-Allow-Origin", "*")
     c.Header("Access-Control-Allow-Headers", "Content-Type")
     c.Header("Access-Control-Allow-Credentials", "true")
-    
-    // Flush headers
-    // c.Writer.Flush()
-	fmt.Println("we got here")
-
-	// Send an immediate test event
-    c.SSEvent("message", "Connected to SSE")
-
-	fmt.Println("we also got here")
 
     ctx, cancel := context.WithCancel(c.Request.Context())
     defer cancel()
@@ -457,12 +445,33 @@ func handleSSE(c *gin.Context) {
     defer close(clientChan)
 
     // Create a channel to receive state updates
-    stateChan := make(chan struct{})
+    stateChan := make(chan struct{}, 1)
     defer close(stateChan)
 
     // Register this client's channel to receive state updates
     registerClient(stateChan)
     defer unregisterClient(stateChan)
+
+    // Send initial state
+    go func() {
+        mixedResponse, err := generateMixedResponse()
+        if err != nil {
+            log.Println("Error generating initial mixed response:", err)
+            return
+        }
+
+        response, err := json.Marshal(mixedResponse)
+        if err != nil {
+            log.Println("Error marshalling initial JSON:", err)
+            return
+        }
+
+        select {
+        case clientChan <- string(response):
+        case <-ctx.Done():
+            return
+        }
+    }()
 
     go func() {
         defer cancel()
