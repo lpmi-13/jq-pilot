@@ -21,12 +21,10 @@ function App() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        console.log({ currentDomain });
         const eventSource = new EventSource(`${currentDomain}/sse`);
 
         eventSource.onmessage = (event) => {
             try {
-                console.log({ event });
                 const { answer, prompt, question } = JSON.parse(event.data);
                 setAnswer(answer);
                 setQuestion(question);
