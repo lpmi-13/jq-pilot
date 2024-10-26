@@ -3,7 +3,7 @@ import { Formatter, FracturedJsonOptions } from 'fracturedjsonjs';
 import './styles/App.scss';
 
 const currentDomain =
-    process.env.REACT_APP_ENV === 'production' &&
+    process.env.REACT_APP_ENV.toLowerCase() === 'production' &&
     !window.location.origin.endsWith('gitpod.io')
         ? window.location.origin
         : 'http://localhost:8000';
