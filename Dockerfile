@@ -2,7 +2,7 @@ FROM golang:1.19-alpine3.17 AS builder
 
 WORKDIR /app
 
-COPY go.mod go.sum /app
+COPY go.mod go.sum /app/
 
 RUN go mod download
 
@@ -15,7 +15,6 @@ RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /app/jq-pilot
 FROM node:18-alpine AS frontend
 
 # pass in --build-arg ENV=local (or any value that's not production) to run this locally.
-# otherwise, the websocket protocol will be wss, which won't work out of the box
 ARG ENV=production
 
 WORKDIR /app
