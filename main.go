@@ -397,72 +397,71 @@ func main() {
 }
 
 var (
-    clientsMutex sync.Mutex
-    clients      []chan struct{}
+    clientsMutex sync.RWMutex
+    clients      = make(map[chan struct{}]bool)
 )
 
 func registerClient(ch chan struct{}) {
     clientsMutex.Lock()
     defer clientsMutex.Unlock()
-    clients = append(clients, ch)
+    clients[ch] = true
 }
 
 func unregisterClient(ch chan struct{}) {
     clientsMutex.Lock()
     defer clientsMutex.Unlock()
-    for i, c := range clients {
-        if c == ch {
-            clients = append(clients[:i], clients[i+1:]...)
-            break
-        }
-    }
+    delete(clients, ch)
+    close(ch)
 }
 
+
 func notifyStateChange() {
-    clientsMutex.Lock()
-    defer clientsMutex.Unlock()
-    for _, ch := range clients {
+    clientsMutex.RLock()
+    defer clientsMutex.RUnlock()
+
+    for ch := range clients {
         select {
         case ch <- struct{}{}:
         default:
-            // If the channel is full, we skip this client
+            // Skip if channel is blocked
         }
     }
 }
 
 func handleSSE(c *gin.Context) {
+    // Set required SSE headers
     c.Header("Content-Type", "text/event-stream")
     c.Header("Cache-Control", "no-cache")
     c.Header("Connection", "keep-alive")
     c.Header("Access-Control-Allow-Origin", "*")
     c.Header("Access-Control-Allow-Headers", "Content-Type")
     c.Header("Access-Control-Allow-Credentials", "true")
+    c.Header("X-Accel-Buffering", "no") // Disable buffering for nginx
 
+    // Create a context that's cancelled when the client disconnects
     ctx, cancel := context.WithCancel(c.Request.Context())
     defer cancel()
 
-    clientChan := make(chan string)
+    // Create a channel for this client
+    clientChan := make(chan string, 1)
     defer close(clientChan)
 
-    // Create a channel to receive state updates
-    stateChan := make(chan struct{}, 1)
-    defer close(stateChan)
+    // Create a ticker for keepalive messages so we can run on cloudrun with
+	// CPU allocated only during request processing
+    keepAliveTicker := time.NewTicker(30 * time.Second)
+    defer keepAliveTicker.Stop()
 
-    // Register this client's channel to receive state updates
-    registerClient(stateChan)
-    defer unregisterClient(stateChan)
-
-    // Send initial state
+    // Send initial state immediately
     go func() {
         mixedResponse, err := generateMixedResponse()
         if err != nil {
-            log.Println("Error generating initial mixed response:", err)
+            log.Printf("Error generating initial mixed response: %v", err)
             return
         }
 
         response, err := json.Marshal(mixedResponse)
         if err != nil {
-            log.Println("Error marshalling initial JSON:", err)
+            log.Printf("Error marshalling initial JSON: %v", err)
             return
         }
 
@@ -473,42 +472,39 @@ func handleSSE(c *gin.Context) {
         }
     }()
 
-    go func() {
-        defer cancel()
-        for {
-            select {
-            case <-ctx.Done():
-                return
-            case <-stateChan:
-                // State has changed, generate and send new response
-                mixedResponse, err := generateMixedResponse()
-                if err != nil {
-                    log.Println("Error generating mixed response:", err)
-                    continue
-                }
+    // Create a channel for state updates
+    stateChan := make(chan struct{}, 1)
+    registerClient(stateChan)
+    defer unregisterClient(stateChan)
 
-                response, err := json.Marshal(mixedResponse)
-                if err != nil {
-                    log.Println("Error marshalling JSON:", err)
-                    continue
-                }
-
-                select {
-                case clientChan <- string(response):
-                case <-ctx.Done():
-                    return
-                }
-            }
-        }
-    }()
-
+    // Start streaming
     c.Stream(func(w io.Writer) bool {
         select {
+        case <-ctx.Done():
+            return false
+        case <-keepAliveTicker.C:
+            // Send keepalive comment to prevent connection timeout
+            c.SSEvent("keepalive", time.Now().Unix())
+            return true
+        case <-stateChan:
+            // State has changed, generate and send new response
+            mixedResponse, err := generateMixedResponse()
+            if err != nil {
+                log.Printf("Error generating mixed response: %v", err)
+                return true // Continue streaming despite error
+            }
+
+            response, err := json.Marshal(mixedResponse)
+            if err != nil {
+                log.Printf("Error marshalling JSON: %v", err)
+                return true // Continue streaming despite error
+            }
+
+            c.SSEvent("message", string(response))
+            return true
         case msg := <-clientChan:
             c.SSEvent("message", msg)
             return true
-        case <-ctx.Done():
-            return false
         }
     })
 }
