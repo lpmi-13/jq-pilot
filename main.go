@@ -9,14 +9,12 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
 	"jq-pilot/transforms"
 	"jq-pilot/util"
 
-	"github.com/andybalholm/brotli"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/static"
@@ -31,51 +29,6 @@ type JsonQuestion[T any, V any] struct {
 	Question T      `json:"question"`
 	Answer   V      `json:"answer"`
 	Prompt   string `json:"prompt"`
-}
-
-type brotliWriter struct {
-    gin.ResponseWriter
-    writer *brotli.Writer
-}
-
-func (w brotliWriter) Write(b []byte) (int, error) {
-    return w.writer.Write(b)
-}
-
-func (w brotliWriter) WriteString(s string) (int, error) {
-    return w.writer.Write([]byte(s))
-}
-
-func (w brotliWriter) WriteHeaderNow() {}
-
-func shouldCompress(acceptEncoding string) bool {
-    return strings.Contains(acceptEncoding, "br")
-}
-
-func brotliMiddleware() gin.HandlerFunc {
-    return func(c *gin.Context) {
-        // Skip compression for SSE endpoint because this initial call needs to be uncompressed
-        if c.Request.URL.Path == "/sse" {
-            c.Next()
-            return
-        }
-
-        if !shouldCompress(c.Request.Header.Get("Accept-Encoding")) {
-            return
-        }
-
-        c.Header("Content-Encoding", "br")
-        c.Header("Vary", "Accept-Encoding")
-
-        // Remove Content-Length as it will no longer be valid
-        c.Header("Content-Length", "")
-
-        brWriter := brotli.NewWriter(c.Writer)
-        defer brWriter.Close()
-
-        c.Writer = &brotliWriter{c.Writer, brWriter}
-        c.Next()
-    }
 }
 
 const (
@@ -411,10 +364,7 @@ func main() {
 
 	router := gin.Default()
 
-    // Add Brotli compression first (higher priority)
-    router.Use(brotliMiddleware())
-
-    // Add gzip as fallback, excluding SSE endpoint, for the same reason as the brotli skip above
+    // Add gzip as fallback, excluding SSE endpoint
     router.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{"/sse"})))
 
     config := cors.DefaultConfig()
