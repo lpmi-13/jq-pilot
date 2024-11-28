@@ -12,7 +12,7 @@ COPY transforms /app/transforms
 
 RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /app/jq-pilot
 
-FROM node:18-alpine AS frontend
+FROM node:20-alpine AS frontend
 
 # pass in --build-arg ENV=local (or any value that's not production) to run this locally.
 ARG ENV=production
