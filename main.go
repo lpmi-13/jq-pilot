@@ -42,6 +42,12 @@ func (w brotliWriter) Write(b []byte) (int, error) {
     return w.writer.Write(b)
 }
 
+func (w brotliWriter) WriteString(s string) (int, error) {
+    return w.writer.Write([]byte(s))
+}
+
+func (w brotliWriter) WriteHeaderNow() {}
+
 func shouldCompress(acceptEncoding string) bool {
     return strings.Contains(acceptEncoding, "br")
 }
@@ -60,6 +66,9 @@ func brotliMiddleware() gin.HandlerFunc {
 
         c.Header("Content-Encoding", "br")
         c.Header("Vary", "Accept-Encoding")
+
+        // Remove Content-Length as it will no longer be valid
+        c.Header("Content-Length", "")
 
         brWriter := brotli.NewWriter(c.Writer)
         defer brWriter.Close()
