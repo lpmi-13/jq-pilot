@@ -68,7 +68,6 @@ var (
 	tagsDictFunctionTypesToCall = []string{
 		jsonToArray,
 	}
-	delay                           = 500
 	totalJsonToJsonFunctions        = 3
 	currentQuestionType             = util.SimplePeopleQuestions
 	currentFunctionType             string
