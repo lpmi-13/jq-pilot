@@ -1,9 +1,0 @@
-tasks:
-    - name: build and run docker container
-      init: docker build -t jq-pilot .
-      command: docker run -p 8000:8000 jq-pilot
-
-ports:
-    - port: 8000
-      onOpen: open-preview
-      name: instructions

@@ -4,7 +4,6 @@ Inspired by the `jq` wizardry of @csibar and @thomas-franklin, I decided I neede
 
 live at https://jkew.party (and also https://jayq.party, since I couldn't decide which name I like more).
 
-
 ## The exercises
 
 based on: https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4
@@ -32,7 +31,7 @@ based on: https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4
 
 ## Local runs
 
-There are two ways to run this locally, depending on whether you have node and go installed, or just want to use docker. You can also run it in gitpod, but the browser window is a bit small.
+There are two ways to run this locally, depending on whether you have node and go installed, or just want to use docker.
 
 ### Node and Go installed
 
@@ -48,8 +47,7 @@ and you should be off to the races.
 
 ### The Docker Way
 
-Be sure to pass in `--build-arg ENV=local` (or any value that's not "production") to avoid the application trying
-to use the `wss` protocol, which won't work out of the box locally.
+Be sure to pass in `--build-arg ENV=local` (or any value that's not "production") to use `localhost` as the domain.
 
 ```
 docker build -t jq-pilot --build-arg ENV=local .

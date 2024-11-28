@@ -5,8 +5,7 @@ import './styles/App.scss';
 const ENV = process.env.REACT_APP_ENV ? process.env.REACT_APP_ENV : 'dev';
 
 const currentDomain =
-    ENV.toLowerCase() === 'production' &&
-    !window.location.origin.endsWith('gitpod.io')
+    ENV.toLowerCase() === 'production'
         ? window.location.origin
         : 'http://localhost:8000';
 
