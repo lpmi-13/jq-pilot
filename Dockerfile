@@ -28,7 +28,7 @@ COPY ./frontend/src /app/src
 
 RUN REACT_APP_ENV=$ENV npm run build
 
-FROM node:18-alpine AS final
+FROM node:20-alpine AS final
 
 WORKDIR /app
 
