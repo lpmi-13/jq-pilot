@@ -66,10 +66,7 @@ function App() {
             <div className={`center ${question ? 'visible' : 'invisible'}`}>
                 <div>{prompt}</div>
                 {ENV.toLowerCase() !== 'production' && (
-                    <button 
-                        onClick={handleSkip}
-                        className="skip-button"
-                    >
+                    <button onClick={handleSkip} className="skip-button">
                         Skip Activity
                     </button>
                 )}

@@ -1,4 +1,4 @@
-@import "./mixins.scss";
+@import './mixins.scss';
 
 .center {
     text-align: center;
@@ -17,17 +17,17 @@ html {
     flex-direction: column;
     align-items: center;
 
-    @include respond-to("mobile") {
+    @include respond-to('mobile') {
         // this is everything bigger than "mobile"
         font-size: 0.9rem;
         margin: 1.5em;
     }
 
-    @include respond-to("small") {
+    @include respond-to('small') {
         font-size: 1rem;
     }
 
-    @include respond-to("medium") {
+    @include respond-to('medium') {
         font-size: 1.25rem;
     }
 }
@@ -41,21 +41,21 @@ html {
 }
 
 .codeblock pre {
-    background: #D3D3D3;
+    background: #d3d3d3;
     padding: 0.5em;
     font-size: 0.65rem;
 
     border-radius: 0.5em;
     box-shadow: 5px 5px 10px #292826;
-    @include respond-to("mobile") {
+    @include respond-to('mobile') {
         font-size: 0.7rem;
     }
 
-    @include respond-to("medium") {
+    @include respond-to('medium') {
         font-size: 0.785rem;
     }
 
-    @include respond-to("large") {
+    @include respond-to('large') {
         font-size: 1.1rem;
     }
 }
@@ -66,7 +66,7 @@ html {
     justify-content: space-evenly;
     align-items: center;
     width: 90%;
-    @include respond-to("small") {
+    @include respond-to('small') {
         flex-direction: row;
     }
 }
@@ -92,11 +92,11 @@ html {
     align-items: center;
     font-size: 0.85rem;
 
-    @include respond-to("mobile") {
+    @include respond-to('mobile') {
         font-size: 1rem;
     }
 
-    @include respond-to("small") {
+    @include respond-to('small') {
         font-size: 1.15rem;
     }
 }
@@ -105,18 +105,18 @@ html {
     margin: 0.2em;
     transform: rotate(90deg);
     font-size: 2rem;
-    @include respond-to("mobile") {
+    @include respond-to('mobile') {
         margin: 0.25em;
         font-size: 2.65rem;
     }
 
-    @include respond-to("small") {
+    @include respond-to('small') {
         margin: 0.3em;
         font-size: 3rem;
         transform: rotate(0deg);
     }
 
-    @include respond-to("large") {
+    @include respond-to('large') {
         font-size: 3rem;
         transform: rotate(0deg);
     }
@@ -127,11 +127,11 @@ html {
 
     font-size: 0.75rem;
 
-    @include respond-to("mobile") {
+    @include respond-to('mobile') {
         font-size: 0.9rem;
     }
 
-    @include respond-to("small") {
+    @include respond-to('small') {
         font-size: 1.15rem;
     }
 }
