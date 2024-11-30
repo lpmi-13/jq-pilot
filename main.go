@@ -376,6 +376,9 @@ func main() {
 
 	if MODE == "prod" {
 		router.Use(static.Serve("/", static.LocalFile("./build", true)))
+	} else {
+		// Add skip endpoint only in development mode
+                router.POST("/skip", handleSkip)
 	}
 
     router.OPTIONS("/sse", func(c *gin.Context) {
@@ -417,6 +420,10 @@ func unregisterClient(ch chan struct{}) {
     close(ch)
 }
 
+func handleSkip(c *gin.Context) {
+    generateNextQuestionAnswer()
+    c.Status(http.StatusOK)
+}
 
 func notifyStateChange() {
     clientsMutex.RLock()
