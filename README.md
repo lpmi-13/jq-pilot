@@ -33,6 +33,10 @@ based on: https://gist.github.com/olih/f7437fb6962fb3ee9fe95bda8d2c8fa4
 
 There are two ways to run this locally, depending on whether you have node and go installed, or just want to use docker.
 
+If you want to skip to the next one, just click the "skip Activity" button.
+
+> NB: Because of the way I've configured the backend with Docker, the skip button functionality currently only works when running via npm (slash I was too lazy to make it also work via Docker runs).
+
 ### Node and Go installed
 
 To start this up and try some exercises, just run
