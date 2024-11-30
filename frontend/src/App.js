@@ -23,7 +23,6 @@ function App() {
 
     useEffect(() => {
         const eventSource = new EventSource(`${currentDomain}/sse`);
-
         eventSource.onmessage = (event) => {
             try {
                 const { answer, prompt, question } = JSON.parse(event.data);
@@ -46,10 +45,34 @@ function App() {
         };
     }, []);
 
+    const handleSkip = async () => {
+        try {
+            const response = await fetch(`${currentDomain}/skip`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            if (!response.ok) {
+                console.error('Failed to skip activity');
+            }
+        } catch (err) {
+            console.error('Error skipping activity:', err);
+        }
+    };
+
     return (
         <Fragment>
             <div className={`center ${question ? 'visible' : 'invisible'}`}>
                 <div>{prompt}</div>
+                {ENV.toLowerCase() !== 'production' && (
+                    <button 
+                        onClick={handleSkip}
+                        className="skip-button"
+                    >
+                        Skip Activity
+                    </button>
+                )}
             </div>
             <h3 className={`loading ${isLoading ? 'visible' : 'undisplay'}`}>
                 LOADING...
