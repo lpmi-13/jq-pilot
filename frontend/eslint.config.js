@@ -2,19 +2,18 @@ import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import tseslint from 'typescript-eslint';
 
-export default [
+export default tseslint.config(
     { ignores: ['build', 'dist', 'node_modules'] },
     {
-        files: ['**/*.{js,jsx}'],
+        files: ['**/*.{ts,tsx}'],
+        extends: [js.configs.recommended, ...tseslint.configs.recommended],
         languageOptions: {
             ecmaVersion: 2022,
             sourceType: 'module',
             globals: {
                 ...globals.browser,
-            },
-            parserOptions: {
-                ecmaFeatures: { jsx: true },
             },
         },
         plugins: {
@@ -22,11 +21,7 @@ export default [
             'react-refresh': reactRefresh,
         },
         rules: {
-            ...js.configs.recommended.rules,
             ...reactHooks.configs.recommended.rules,
-            // Components are referenced only inside JSX, which core ESLint does
-            // not parse; ignore capitalized identifiers so they aren't flagged.
-            'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
             'react-refresh/only-export-components': [
                 'warn',
                 { allowConstantExport: true },
@@ -34,11 +29,11 @@ export default [
         },
     },
     {
-        files: ['**/*.test.{js,jsx}', 'src/setupTests.js'],
+        files: ['**/*.test.{ts,tsx}', 'src/setupTests.ts'],
         languageOptions: {
             globals: {
                 ...globals.node,
             },
         },
-    },
-];
+    }
+);

@@ -15,17 +15,27 @@ options.MaxTotalLineLength = 40;
 options.IndentSpaces = 2;
 formatter.Options = options;
 
+// The Go server sends question/answer as arbitrary JSON (objects, arrays,
+// strings, or numbers depending on the exercise), so they stay unknown.
+interface Exercise {
+    question: unknown;
+    answer: unknown;
+    prompt: string;
+}
+
 function App() {
-    const [question, setQuestion] = useState(null);
-    const [answer, setAnswer] = useState(null);
-    const [prompt, setPrompt] = useState(null);
+    const [question, setQuestion] = useState<unknown>(null);
+    const [answer, setAnswer] = useState<unknown>(null);
+    const [prompt, setPrompt] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const eventSource = new EventSource(`${currentDomain}/sse`);
-        eventSource.onmessage = (event) => {
+        eventSource.onmessage = (event: MessageEvent<string>) => {
             try {
-                const { answer, prompt, question } = JSON.parse(event.data);
+                const { answer, prompt, question } = JSON.parse(
+                    event.data
+                ) as Exercise;
                 setAnswer(answer);
                 setQuestion(question);
                 setPrompt(prompt);

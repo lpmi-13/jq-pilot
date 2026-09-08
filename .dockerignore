@@ -1,2 +1,7 @@
 Dockerfile
-frontend/node_modules
+.git/
+.env
+docs/
+frontend/node_modules/
+frontend/build/
+frontend/coverage/

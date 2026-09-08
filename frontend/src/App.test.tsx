@@ -4,11 +4,11 @@ import App from './App';
 
 // App opens an SSE connection on mount; jsdom has no EventSource, so stub it.
 beforeAll(() => {
-    global.EventSource = vi.fn(() => ({
+    globalThis.EventSource = vi.fn(() => ({
         close: vi.fn(),
         onmessage: null,
         onerror: null,
-    }));
+    })) as unknown as typeof EventSource;
 });
 
 test('renders the loading state before any question arrives', () => {
