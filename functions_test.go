@@ -1,11 +1,10 @@
 package main
 
 import (
+	"reflect"
 	"testing"
 
 	"jq-pilot/util"
-
-	"github.com/go-test/deep"
 )
 
 var (
@@ -58,8 +57,7 @@ func TestUniqueRemovesDuplicates(t *testing.T) {
 	expected := []int{1, 2, 3, 4, 5}
 	actual := util.Unique(testArray)
 
-	diff := deep.Equal(expected, actual)
-	if diff != nil {
+	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Expected %v to equal %v, but it didn't", expected, actual)
 	}
 }
@@ -69,8 +67,7 @@ func TestUniqueKeepsOnlyUniques(t *testing.T) {
 	expected := []int{1, 3, 9, 27}
 	actual := util.Unique(testArray)
 
-	diff := deep.Equal(expected, actual)
-	if diff != nil {
+	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("Expected %v to equal %v, but it didn't", expected, actual)
 	}
 }

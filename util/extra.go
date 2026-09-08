@@ -3,7 +3,6 @@ package util
 import (
 	"log"
 	"math/rand"
-	"time"
 
 	"github.com/go-faker/faker/v4"
 )
@@ -110,7 +109,6 @@ func ContainsElement[T comparable](s []T, id T) bool {
 }
 
 func GetSingleRandomValueFromArray[T any](a []T) T {
-	rand.Seed(time.Now().UnixNano())
 
 	randomIndex := rand.Intn(len(a))
 
@@ -120,7 +118,6 @@ func GetSingleRandomValueFromArray[T any](a []T) T {
 // there are a lot of places where we want "3 random student names" or "4 random items", and
 // it would be nice to abstract that to a function...might be we only need to do this with strings
 func GetNRandomValuesFromArray[T comparable](a []T, howMany int) []T {
-	rand.Seed(time.Now().UnixNano())
 
 	var arrayItems []T
 
@@ -160,7 +157,6 @@ func MakeRangeFloats(min, max int) []float64 {
 
 // a generic function to take an array and return one of the items at random
 func GeneratePossibleValue[T any](valuesArray []T) T {
-	rand.Seed(time.Now().UnixNano())
 
 	indexToChoose := rand.Intn(len(valuesArray))
 
@@ -238,7 +234,6 @@ func generateGradeResults() []int {
 	scoreLowerRange := 50
 
 	for i := 0; i < numbeOfGradesToGenerate; i++ {
-		rand.Seed(time.Now().UnixNano())
 		score := rand.Intn(scoreUpperRange-scoreLowerRange) + scoreLowerRange
 
 		scores[i] = score
@@ -248,7 +243,6 @@ func generateGradeResults() []int {
 }
 
 func GenerateComplexGradesObject() ComplexGradesObject {
-	rand.Seed(time.Now().UnixNano())
 
 	// just hardcode to always have 3
 	var numberOfStudents int = 3
@@ -273,7 +267,6 @@ func GenerateComplexGradesObject() ComplexGradesObject {
 }
 
 func GenerateLotteryPicks() []FakeLotteryPick {
-	rand.Seed(time.Now().UnixNano())
 
 	var fakePicksArray []FakeLotteryPick
 
@@ -318,7 +311,6 @@ func GenerateLotteryPicks() []FakeLotteryPick {
 }
 
 func GeneratePurchaseList() []FakePurchase {
-	rand.Seed(time.Now().UnixNano())
 
 	// hacking this so we always have at least 3 purchases...for now
 	numberOfPurchases := rand.Intn(3) + 3
@@ -347,7 +339,6 @@ func GeneratePurchaseList() []FakePurchase {
 }
 
 func PickActivities() map[string]string {
-	rand.Seed(time.Now().UnixNano())
 
 	activitiesArray := GetNRandomValuesFromArray(possibleActivities, 7)
 
@@ -368,7 +359,6 @@ func PickActivities() map[string]string {
 }
 
 func PickFavoriteColors() []string {
-	rand.Seed(time.Now().UnixNano())
 
 	// we always want at least one color
 	howManyColorsToPick := rand.Intn(4) + 1
@@ -396,7 +386,6 @@ func Unique[T comparable](inputSlice []T) []T {
 }
 
 func GenerateRandomBoolean() bool {
-	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(2) == 1
 }
 
@@ -425,7 +414,6 @@ func GetHighestIntValue(a []int) int {
 
 // shameless steal from the internet
 func GetRandomKeyFromMap(m map[string][]int) string {
-	rand.Seed(time.Now().UnixNano())
 
 	k := rand.Intn(len(m))
 	i := 0

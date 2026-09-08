@@ -9,6 +9,8 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
+	"reflect"
 	"sync"
 	"time"
 
@@ -19,15 +21,15 @@ import (
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
-	"github.com/go-test/deep"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 )
 
-// these generics are hashtag delicious, and I'm here for it
-type JsonQuestion[T any, V any] struct {
-	Question T      `json:"question"`
-	Answer   V      `json:"answer"`
+// jsonQuestion is the payload shape returned to the client for every exercise.
+// The concrete Go types of the question and answer vary per exercise, but they
+// are only ever marshaled to JSON, so plain any fields serialize identically to
+// the old per-type generic struct while letting a single struct serve them all.
+type jsonQuestion struct {
+	Question any    `json:"question"`
+	Answer   any    `json:"answer"`
 	Prompt   string `json:"prompt"`
 }
 
@@ -68,35 +70,19 @@ var (
 	tagsDictFunctionTypesToCall = []string{
 		jsonToArray,
 	}
-	totalJsonToJsonFunctions        = 3
-	currentQuestionType             = util.SimplePeopleQuestions
-	currentFunctionType             string
-	personQuestionData              transforms.PureJson
-	personAnswerDataJson            transforms.PureJson
-	personAnswerDataString          string
-	personAnswerDataInt             int
-	purchaseQuestionData            transforms.PureJsonArrayPurchases
-	purchaseAnswerDataIntArray      []int
-	purchaseAnswerDataStringArray   []string
-	purchaseAnswerDataJsonArray     []util.FakePurchase
-	purchaseAnswerDataJsonVerified  []util.FakePurchaseVerified
-	purchaseAnswerDataJsonLowercase []map[string]any
-	purchaseAnswerDataGrouped       util.FakePurchaseGrouped
-	lotteryQuestionData             transforms.PureJsonArrayLottery
-	lotteryAnswerDataIntArray       []int
-	lotteryAnswerDataInt            int
-	lotteryAnswerDataJson           util.FakeLotteryPick
-	lotteryAnswerDataSmallerJson    []util.FakeLotteryPick
-	lotteryAnswerFreqDist           map[string]int
-	gradesQuestionData              util.ComplexGradesObject
-	gradesAnswerDataInt             int
-	gradesAnswerDataJson            []util.SimplerStudent
-	gradesAnswerDataRidicJson       util.Student
-	tagsQuestionDataArray           []util.Tag
-	tagsQuestionDataDict            map[string]string
-	tagsAnswerDictData              map[string]string
-	tagsAnswerArrayData             []util.Tag
-	prompt                          string
+	totalJsonToJsonFunctions = 3
+	currentQuestionType      = util.SimplePeopleQuestions
+	currentFunctionType      string
+
+	// currentQuestionData / currentAnswerData hold the single live exercise: the
+	// data shown to the player and its expected answer, each boxed in an any.
+	// generateNextQuestionAnswer builds both from the same freshly generated data,
+	// so they always agree on the (question type, function type) in effect. The
+	// response path marshals them as-is; getAnswer type-asserts the answer back to
+	// its concrete type to compare against the player's submission.
+	currentQuestionData any
+	currentAnswerData   any
+	prompt              string
 )
 
 // stateMu guards all of the shared game state declared above: the
@@ -136,8 +122,6 @@ func generateGradesQuestionData() util.ComplexGradesObject {
 }
 
 func generateTagsQuestionDataArray() []util.Tag {
-	rand.Seed(time.Now().UnixNano())
-
 	// we always want at least 2 tags, and no more than 6
 	numberOfTags := rand.Intn(4) + 2
 
@@ -155,8 +139,6 @@ func generateTagsQuestionDataArray() []util.Tag {
 // we need two of these tags question generators because they don't both start from the
 // same structure
 func generateTagsQuestionDataDict() map[string]string {
-	rand.Seed(time.Now().UnixNano())
-
 	// we always want at least 2 tags, and no more than 6
 	numberOfTags := rand.Intn(4) + 2
 
@@ -199,186 +181,13 @@ func generatePersonQuestionData() transforms.PureJson {
 	}
 }
 
-func generatePeopleQuestion() (interface{}, error) {
-	var mixedResponse interface{}
-	if currentFunctionType == jsonToJson {
-		mixedResponse = JsonQuestion[map[string]interface{}, map[string]interface{}]{
-			Question: personQuestionData,
-			Answer:   personAnswerDataJson,
-			Prompt:   prompt,
-		}
-	} else if currentFunctionType == jsonToString {
-		mixedResponse = JsonQuestion[map[string]interface{}, string]{
-			Question: personQuestionData,
-			Answer:   personAnswerDataString,
-			Prompt:   prompt,
-		}
-	} else if currentFunctionType == jsonToInt {
-		mixedResponse = JsonQuestion[map[string]interface{}, int]{
-			Question: personQuestionData,
-			Answer:   personAnswerDataInt,
-			Prompt:   prompt,
-		}
-	} else {
-		return nil, errors.New("couldn't match function type for people question")
-	}
-
-	return mixedResponse, nil
-}
-
-func generatePurchaseQuestion() (interface{}, error) {
-	var mixedResponse interface{}
-	if currentFunctionType == jsonToIntArray {
-		mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []int]{
-			Question: purchaseQuestionData,
-			Answer:   purchaseAnswerDataIntArray,
-			Prompt:   prompt,
-		}
-	} else if currentFunctionType == jsonToStringArray {
-		mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []string]{
-			Question: purchaseQuestionData,
-			Answer:   purchaseAnswerDataStringArray,
-			Prompt:   prompt,
-		}
-	} else if currentFunctionType == jsonToJson {
-		mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []util.FakePurchase]{
-			Question: purchaseQuestionData,
-			Answer:   purchaseAnswerDataJsonArray,
-			Prompt:   prompt,
-		}
-	} else if currentFunctionType == jsonToElaboratedJson {
-		mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []util.FakePurchaseVerified]{
-			Question: purchaseQuestionData,
-			Answer:   purchaseAnswerDataJsonVerified,
-			Prompt:   prompt,
-		}
-	} else if currentFunctionType == jsonToLowercaseJson {
-		mixedResponse = JsonQuestion[map[string][]util.FakePurchase, []map[string]any]{
-			Question: purchaseQuestionData,
-			Answer:   purchaseAnswerDataJsonLowercase,
-			Prompt:   prompt,
-		}
-	} else if currentFunctionType == jsonToGroupedJson {
-		mixedResponse = JsonQuestion[map[string][]util.FakePurchase, util.FakePurchaseGrouped]{
-			Question: purchaseQuestionData,
-			Answer:   purchaseAnswerDataGrouped,
-			Prompt:   prompt,
-		}
-	} else {
-		return nil, errors.New("couldn't match function type for purchase question")
-	}
-
-	return mixedResponse, nil
-}
-
-func generateTagsQuestionArray() (interface{}, error) {
-	var mixedResponse interface{}
-	if currentFunctionType == jsonToDict {
-		mixedResponse = JsonQuestion[[]util.Tag, map[string]string]{
-			Question: tagsQuestionDataArray,
-			Answer:   tagsAnswerDictData,
-			Prompt:   prompt,
-		}
-	} else {
-		log.Fatal("didn't match the function type")
-	}
-
-	return mixedResponse, nil
-}
-
-func generateTagsQuestionDict() (interface{}, error) {
-	var mixedResponse interface{}
-	if currentFunctionType == jsonToArray {
-		mixedResponse = JsonQuestion[map[string]string, []util.Tag]{
-			Question: tagsQuestionDataDict,
-			Answer:   tagsAnswerArrayData,
-			Prompt:   prompt,
-		}
-	} else {
-		log.Fatal("function type match go boom")
-	}
-
-	return mixedResponse, nil
-}
-
-func generateGradesQuestion() (interface{}, error) {
-	var mixedResponse interface{}
-	if currentFunctionType == jsonToInt {
-		mixedResponse = JsonQuestion[util.ComplexGradesObject, int]{
-			Question: gradesQuestionData,
-			Answer:   gradesAnswerDataInt,
-			Prompt:   prompt,
-		}
-	} else if currentFunctionType == jsonToRidicJson {
-		mixedResponse = JsonQuestion[util.ComplexGradesObject, util.Student]{
-			Question: gradesQuestionData,
-			Answer:   gradesAnswerDataRidicJson,
-			Prompt:   prompt,
-		}
-	} else if currentFunctionType == jsonToJson {
-		mixedResponse = JsonQuestion[util.ComplexGradesObject, []util.SimplerStudent]{
-			Question: gradesQuestionData,
-			Answer:   gradesAnswerDataJson,
-			Prompt:   prompt,
-		}
-	} else {
-		return nil, errors.New("couldn't match function type for grades question")
-	}
-
-	return mixedResponse, nil
-}
-
-func generateLotteryQuestion() (interface{}, error) {
-	var mixedResponse interface{}
-	if currentFunctionType == jsonToJson {
-		mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, util.FakeLotteryPick]{
-			Question: lotteryQuestionData,
-			Answer:   lotteryAnswerDataJson,
-			Prompt:   prompt,
-		}
-	} else if currentFunctionType == jsonToSmallerJson {
-		mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, []util.FakeLotteryPick]{
-			Question: lotteryQuestionData,
-			Answer:   lotteryAnswerDataSmallerJson,
-			Prompt:   prompt,
-		}
-	} else if currentFunctionType == jsonToDict {
-		mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, map[string]int]{
-			Question: lotteryQuestionData,
-			Answer:   lotteryAnswerFreqDist,
-			Prompt:   prompt,
-		}
-	} else if currentFunctionType == jsonToIntArray {
-		mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, []int]{
-			Question: lotteryQuestionData,
-			Answer:   lotteryAnswerDataIntArray,
-			Prompt:   prompt,
-		}
-	} else if currentFunctionType == jsonToInt {
-		mixedResponse = JsonQuestion[map[string][]util.FakeLotteryPick, int]{
-			Question: lotteryQuestionData,
-			Answer:   lotteryAnswerDataInt,
-			Prompt:   prompt,
-		}
-	} else {
-		return nil, errors.New("couldn't match function type for lottery question")
-	}
-
-	return mixedResponse, nil
-}
-
 func main() {
 	generateNextQuestionAnswer()
 
-	flag.String("MODE", "dev", "whether we're running in dev or production mode")
+	modeFlag := flag.String("MODE", "dev", "whether we're running in dev or production mode")
+	flag.Parse()
 
-	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-	pflag.Parse()
-	viper.BindPFlags(pflag.CommandLine)
-
-	MODE := viper.GetString("MODE")
-
-	viper.SetDefault("PORT", "8000")
+	MODE := *modeFlag
 
 	if MODE == "prod" {
 		gin.SetMode(gin.ReleaseMode)
@@ -413,7 +222,12 @@ func main() {
 	router.SetTrustedProxies(nil)
 	router.NoRoute(func(ctx *gin.Context) { ctx.JSON(http.StatusNotFound, gin.H{}) })
 
-	port := viper.GetString("PORT")
+	// PORT is injected by the platform (e.g. Cloud Run sets it to the configured
+	// container port); fall back to 8000 for local runs and the Docker image.
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8000"
+	}
 
 	srv := &http.Server{
 		Addr:    ":" + port,
@@ -586,62 +400,27 @@ func handleSSE(c *gin.Context) {
 }
 
 func generateMixedResponse() (interface{}, error) {
-	// Held for the whole assembly so the selectors and the data they point at are
-	// read as one consistent snapshot. The returned value only holds header copies
-	// of the (immutable) published state, so the caller can marshal it after the
-	// lock is released.
+	// Read the live question, answer and prompt as one consistent snapshot. The
+	// returned struct only holds header copies of the (immutable) published state,
+	// so the caller can marshal it after the lock is released.
 	stateMu.RLock()
 	defer stateMu.RUnlock()
 
-	var mixedResponse interface{}
-	var err error
-
-	switch currentQuestionType {
-	case util.SimplePeopleQuestions:
-		mixedResponse, err = generatePeopleQuestion()
-	case util.SimplePurchaseQuestions:
-		mixedResponse, err = generatePurchaseQuestion()
-	case util.SimpleLotteryQuestions:
-		mixedResponse, err = generateLotteryQuestion()
-	case util.SimpleGradesQuestions:
-		mixedResponse, err = generateGradesQuestion()
-	case util.SimpleTagsQuestionsArrayToDict:
-		mixedResponse, err = generateTagsQuestionArray()
-	case util.SimpleTagsQuestionsDictToArray:
-		mixedResponse, err = generateTagsQuestionDict()
-	default:
-		return nil, errors.New("couldn't get question type")
+	if currentAnswerData == nil {
+		return nil, errors.New("no question has been generated yet")
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
-	return mixedResponse, nil
+	return jsonQuestion{
+		Question: currentQuestionData,
+		Answer:   currentAnswerData,
+		Prompt:   prompt,
+	}, nil
 }
 
-// this is crap and should be more general
 func getQuestion(c *gin.Context) {
-	// Read the selector and its matching data as one consistent snapshot, then
-	// release the lock before serializing/writing to the (possibly slow) client.
-	stateMu.RLock()
-	var data any
-	switch currentQuestionType {
-	case util.SimplePeopleQuestions:
-		data = personQuestionData
-	case util.SimplePurchaseQuestions:
-		data = purchaseQuestionData
-	case util.SimpleLotteryQuestions:
-		data = lotteryQuestionData
-	case util.SimpleGradesQuestions:
-		data = gradesQuestionData
-	case util.SimpleTagsQuestionsArrayToDict:
-		data = tagsQuestionDataArray
-	case util.SimpleTagsQuestionsDictToArray:
-		data = tagsQuestionDataDict
-	}
-	stateMu.RUnlock()
-
+	// Snapshot the live question data, then release the lock before serializing and
+	// writing to the (possibly slow) client.
+	data := snapshot(&currentQuestionData)
 	if data != nil {
 		c.IndentedJSON(http.StatusOK, data)
 	}
@@ -655,52 +434,58 @@ func generateNextQuestionAnswer() {
 	// of function types to use to create the activity
 	currentQuestionType = util.GeneratePossibleValue(util.PossibleQuestionTypes)
 
-	// there's probably a better way to structure this hierarchy, but we'll just go with
-	// something dumb and verbose for now
-	if currentQuestionType == util.SimplePeopleQuestions {
+	// pick the subset of function types available for the chosen question type
+	switch currentQuestionType {
+	case util.SimplePeopleQuestions:
 		currentFunctionType = util.GeneratePossibleValue(peopleFunctionTypesToCall)
-	} else if currentQuestionType == util.SimplePurchaseQuestions {
+	case util.SimplePurchaseQuestions:
 		currentFunctionType = util.GeneratePossibleValue(purchaseFunctionTypesToCall)
-	} else if currentQuestionType == util.SimpleLotteryQuestions {
+	case util.SimpleLotteryQuestions:
 		currentFunctionType = util.GeneratePossibleValue(lotteryFunctionTypesToCall)
-	} else if currentQuestionType == util.SimpleGradesQuestions {
+	case util.SimpleGradesQuestions:
 		currentFunctionType = util.GeneratePossibleValue(gradesFunctionTypesToCall)
-	} else if currentQuestionType == util.SimpleTagsQuestionsArrayToDict {
+	case util.SimpleTagsQuestionsArrayToDict:
 		currentFunctionType = util.GeneratePossibleValue(tagsArrayFunctionTypesToCall)
-	} else if currentQuestionType == util.SimpleTagsQuestionsDictToArray {
+	case util.SimpleTagsQuestionsDictToArray:
 		currentFunctionType = util.GeneratePossibleValue(tagsDictFunctionTypesToCall)
-	} else {
+	default:
 		log.Fatal("this blew up because we couldn't determine the currentFunctionType")
 	}
 
 	log.Println("the function type is:", currentFunctionType)
 
+	// Each case generates fresh question data (kept in a local so the transforms can
+	// take its concrete type) and publishes it, along with the expected answer, into
+	// the currentQuestionData / currentAnswerData boxes read by the response and
+	// answer-checking paths.
 	switch currentQuestionType {
 	case util.SimpleLotteryQuestions:
-		lotteryQuestionData = generateLotteryPickQuestionData()
+		questionData := generateLotteryPickQuestionData()
+		currentQuestionData = questionData
 
 		switch currentFunctionType {
 		case jsonToJson:
-			lotteryAnswerDataJson, prompt = transforms.PickAWinner(lotteryQuestionData)
+			currentAnswerData, prompt = transforms.PickAWinner(questionData)
 		case jsonToSmallerJson:
-			lotteryAnswerDataSmallerJson, prompt = transforms.GetNRangePicks(lotteryQuestionData)
+			currentAnswerData, prompt = transforms.GetNRangePicks(questionData)
 		case jsonToDict:
-			lotteryAnswerFreqDist, prompt = transforms.GetLotteryPickFrequencyDistribution(lotteryQuestionData)
+			currentAnswerData, prompt = transforms.GetLotteryPickFrequencyDistribution(questionData)
 		case jsonToIntArray:
-			lotteryAnswerDataIntArray, prompt = transforms.GetAllUniqueArrayIntValues(lotteryQuestionData)
+			currentAnswerData, prompt = transforms.GetAllUniqueArrayIntValues(questionData)
 		case jsonToInt:
-			lotteryAnswerDataInt, prompt = transforms.GetNumberOfPicks(lotteryQuestionData)
+			currentAnswerData, prompt = transforms.GetNumberOfPicks(questionData)
 		}
 
 	case util.SimplePeopleQuestions:
-		personQuestionData = generatePersonQuestionData()
+		questionData := generatePersonQuestionData()
+		currentQuestionData = questionData
 		// this should really by something like nextFunctionType, but we can refactor later
 		switch currentFunctionType {
 		// this is where the Simple Person Question exercises are generated
 		case jsonToInt:
-			personAnswerDataInt, prompt = transforms.GetOneKeyIntValue(personQuestionData)
+			currentAnswerData, prompt = transforms.GetOneKeyIntValue(questionData)
 		case jsonToString:
-			personAnswerDataString, prompt = transforms.GetOneKeyStringValue(personQuestionData)
+			currentAnswerData, prompt = transforms.GetOneKeyStringValue(questionData)
 		case jsonToJson:
 			var jsonToJsonFunction func(transforms.PureJson) (transforms.PureJson, string)
 
@@ -717,53 +502,56 @@ func generateNextQuestionAnswer() {
 				log.Fatal("this blew up because we couldn't match the functionToCall here")
 			}
 
-			personAnswerDataJson, prompt = jsonToJsonFunction(personQuestionData)
+			currentAnswerData, prompt = jsonToJsonFunction(questionData)
 		default:
 			log.Fatal("blew the F up!")
 		}
 	case util.SimplePurchaseQuestions:
-		purchaseQuestionData = generatePurchaseQuestionData()
+		questionData := generatePurchaseQuestionData()
+		currentQuestionData = questionData
 
 		switch currentFunctionType {
 		// this is where the Simple Purchase Question exercises are generated
 		case jsonToIntArray:
-			purchaseAnswerDataIntArray, prompt = transforms.GetAllArrayIntValues(purchaseQuestionData)
+			currentAnswerData, prompt = transforms.GetAllArrayIntValues(questionData)
 		case jsonToStringArray:
-			purchaseAnswerDataStringArray, prompt = transforms.GetAllArrayStringValues(purchaseQuestionData)
+			currentAnswerData, prompt = transforms.GetAllArrayStringValues(questionData)
 		case jsonToJson:
-			purchaseAnswerDataJsonArray, prompt = transforms.GetFilteredByPurchasePrice(purchaseQuestionData)
+			currentAnswerData, prompt = transforms.GetFilteredByPurchasePrice(questionData)
 		case jsonToElaboratedJson:
-			purchaseAnswerDataJsonVerified, prompt = transforms.AddVerifiedToEachPurchase(purchaseQuestionData)
+			currentAnswerData, prompt = transforms.AddVerifiedToEachPurchase(questionData)
 		case jsonToLowercaseJson:
-			purchaseAnswerDataJsonLowercase, prompt = transforms.MakeAllFieldsLowercase(purchaseQuestionData)
+			currentAnswerData, prompt = transforms.MakeAllFieldsLowercase(questionData)
 		case jsonToGroupedJson:
-			purchaseAnswerDataGrouped, prompt = transforms.GetGroupByPurchasePrice(purchaseQuestionData)
+			currentAnswerData, prompt = transforms.GetGroupByPurchasePrice(questionData)
 		}
 	case util.SimpleGradesQuestions:
-		gradesQuestionData = generateGradesQuestionData()
+		questionData := generateGradesQuestionData()
+		currentQuestionData = questionData
 
 		switch currentFunctionType {
 		case jsonToJson:
-			gradesAnswerDataJson, prompt = transforms.GetHighestScoreForEachSubject(gradesQuestionData)
+			currentAnswerData, prompt = transforms.GetHighestScoreForEachSubject(questionData)
 		case jsonToRidicJson:
-			gradesAnswerDataRidicJson, prompt = transforms.GetHighestResultInOneSubject(gradesQuestionData)
+			currentAnswerData, prompt = transforms.GetHighestResultInOneSubject(questionData)
 		case jsonToInt:
-			gradesAnswerDataInt, prompt = transforms.GetHighestScoreForPersonInSubject(gradesQuestionData)
+			currentAnswerData, prompt = transforms.GetHighestScoreForPersonInSubject(questionData)
 		default:
 			log.Println("fell into the default question type...for...reasons...")
 		}
 	case util.SimpleTagsQuestionsArrayToDict:
-
 		switch currentFunctionType {
 		case jsonToDict:
-			tagsQuestionDataArray = generateTagsQuestionDataArray()
-			tagsAnswerDictData, prompt = transforms.GetDictFromArray(tagsQuestionDataArray)
+			questionData := generateTagsQuestionDataArray()
+			currentQuestionData = questionData
+			currentAnswerData, prompt = transforms.GetDictFromArray(questionData)
 		}
 	case util.SimpleTagsQuestionsDictToArray:
 		switch currentFunctionType {
 		case jsonToArray:
-			tagsQuestionDataDict = generateTagsQuestionDataDict()
-			tagsAnswerArrayData, prompt = transforms.GetArrayFromDict(tagsQuestionDataDict)
+			questionData := generateTagsQuestionDataDict()
+			currentQuestionData = questionData
+			currentAnswerData, prompt = transforms.GetArrayFromDict(questionData)
 		}
 	}
 	notifyStateChange()
@@ -783,9 +571,7 @@ func processAnswer[T any](context *gin.Context, expectedAnswer T) {
 		return
 	}
 
-	diff := deep.Equal(actualAnswer, expectedAnswer)
-
-	if diff == nil {
+	if reflect.DeepEqual(actualAnswer, expectedAnswer) {
 		log.Println("correct")
 		generateNextQuestionAnswer()
 	} else {
@@ -799,71 +585,78 @@ func getPrompt(c *gin.Context) {
 }
 
 func getAnswer(c *gin.Context) {
-	// Read the two selectors as one consistent snapshot. Each expected answer is
-	// then snapshotted individually (via snapshot below) so we never hold the read
-	// lock while processAnswer reads the request body or calls
-	// generateNextQuestionAnswer (which needs the write lock).
+	// Snapshot the selectors and the expected answer together under one read lock so
+	// they describe the same exercise, then release it before processAnswer reads the
+	// request body or calls generateNextQuestionAnswer (which needs the write lock).
+	// Because the triple is consistent, the concrete type asserted below always
+	// matches what generateNextQuestionAnswer stored for this exercise.
 	stateMu.RLock()
 	questionType := currentQuestionType
 	functionType := currentFunctionType
+	answer := currentAnswerData
 	stateMu.RUnlock()
 
-	if questionType == util.SimplePurchaseQuestions {
+	switch questionType {
+	case util.SimplePurchaseQuestions:
 		// we keep the current function type in state so we know how to compare the answer
-		if functionType == jsonToStringArray {
-			processAnswer[[]string](c, snapshot(&purchaseAnswerDataStringArray))
-		} else if functionType == jsonToIntArray {
-			processAnswer[[]int](c, snapshot(&purchaseAnswerDataIntArray))
-		} else if functionType == jsonToJson {
-			processAnswer[[]util.FakePurchase](c, snapshot(&purchaseAnswerDataJsonArray))
-		} else if functionType == jsonToElaboratedJson {
-			processAnswer[[]util.FakePurchaseVerified](c, snapshot(&purchaseAnswerDataJsonVerified))
-		} else if functionType == jsonToLowercaseJson {
-			processAnswer[[]map[string]any](c, snapshot(&purchaseAnswerDataJsonLowercase))
-		} else if functionType == jsonToGroupedJson {
-			processAnswer[util.FakePurchaseGrouped](c, snapshot(&purchaseAnswerDataGrouped))
+		switch functionType {
+		case jsonToStringArray:
+			processAnswer(c, answer.([]string))
+		case jsonToIntArray:
+			processAnswer(c, answer.([]int))
+		case jsonToJson:
+			processAnswer(c, answer.([]util.FakePurchase))
+		case jsonToElaboratedJson:
+			processAnswer(c, answer.([]util.FakePurchaseVerified))
+		case jsonToLowercaseJson:
+			processAnswer(c, answer.([]map[string]any))
+		case jsonToGroupedJson:
+			processAnswer(c, answer.(util.FakePurchaseGrouped))
 		}
-	} else if questionType == util.SimplePeopleQuestions {
-		if functionType == jsonToString {
-			processAnswer[string](c, snapshot(&personAnswerDataString))
-		} else if functionType == jsonToInt {
-			processAnswer[int](c, snapshot(&personAnswerDataInt))
-		} else if functionType == jsonToJson {
-			processAnswer[transforms.PureJson](c, snapshot(&personAnswerDataJson))
+	case util.SimplePeopleQuestions:
+		switch functionType {
+		case jsonToString:
+			processAnswer(c, answer.(string))
+		case jsonToInt:
+			processAnswer(c, answer.(int))
+		case jsonToJson:
+			processAnswer(c, answer.(transforms.PureJson))
 		}
-	} else if questionType == util.SimpleLotteryQuestions {
-		if functionType == jsonToJson {
-			processAnswer[util.FakeLotteryPick](c, snapshot(&lotteryAnswerDataJson))
-		} else if functionType == jsonToSmallerJson {
-			processAnswer[[]util.FakeLotteryPick](c, snapshot(&lotteryAnswerDataSmallerJson))
-		} else if functionType == jsonToDict {
-			processAnswer[map[string]int](c, snapshot(&lotteryAnswerFreqDist))
-		} else if functionType == jsonToIntArray {
-			processAnswer[[]int](c, snapshot(&lotteryAnswerDataIntArray))
-		} else if functionType == jsonToInt {
-			processAnswer[int](c, snapshot(&lotteryAnswerDataInt))
+	case util.SimpleLotteryQuestions:
+		switch functionType {
+		case jsonToJson:
+			processAnswer(c, answer.(util.FakeLotteryPick))
+		case jsonToSmallerJson:
+			processAnswer(c, answer.([]util.FakeLotteryPick))
+		case jsonToDict:
+			processAnswer(c, answer.(map[string]int))
+		case jsonToIntArray:
+			processAnswer(c, answer.([]int))
+		case jsonToInt:
+			processAnswer(c, answer.(int))
 		}
-	} else if questionType == util.SimpleGradesQuestions {
-		if functionType == jsonToInt {
-			processAnswer[int](c, snapshot(&gradesAnswerDataInt))
-		} else if functionType == jsonToJson {
-			processAnswer[[]util.SimplerStudent](c, snapshot(&gradesAnswerDataJson))
-		} else if functionType == jsonToRidicJson {
-			processAnswer[util.Student](c, snapshot(&gradesAnswerDataRidicJson))
+	case util.SimpleGradesQuestions:
+		switch functionType {
+		case jsonToInt:
+			processAnswer(c, answer.(int))
+		case jsonToJson:
+			processAnswer(c, answer.([]util.SimplerStudent))
+		case jsonToRidicJson:
+			processAnswer(c, answer.(util.Student))
 		}
-	} else if questionType == util.SimpleTagsQuestionsArrayToDict {
+	case util.SimpleTagsQuestionsArrayToDict:
 		if functionType == jsonToDict {
-			processAnswer[map[string]string](c, snapshot(&tagsAnswerDictData))
+			processAnswer(c, answer.(map[string]string))
 		} else {
 			log.Fatal("didn't match a function type")
 		}
-	} else if questionType == util.SimpleTagsQuestionsDictToArray {
+	case util.SimpleTagsQuestionsDictToArray:
 		if functionType == jsonToArray {
-			processAnswer[[]util.Tag](c, snapshot(&tagsAnswerArrayData))
+			processAnswer(c, answer.([]util.Tag))
 		} else {
 			log.Fatal("didn't match a function type here either")
 		}
-	} else {
+	default:
 		log.Println("No current question type...sad day")
 	}
 }

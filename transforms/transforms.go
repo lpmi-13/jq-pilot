@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"sort"
 	"strings"
-	"time"
 
 	"jq-pilot/util"
 )
@@ -23,7 +22,6 @@ type PureJsonArrayLottery map[string][]util.FakeLotteryPick
 func DeleteOneKey(jsonInput PureJson) (PureJson, string) {
 	// we want to delete one of the keys (just assume we always have more than one key...
 	// maybe we can look at making this more robust for all cases later)
-	rand.Seed(time.Now().UnixNano())
 
 	keyToDelete := rand.Intn(len(jsonInput))
 
@@ -49,7 +47,6 @@ func DeleteOneKey(jsonInput PureJson) (PureJson, string) {
 }
 
 func DeleteRandomKeys(jsonInput PureJson) (PureJson, string) {
-	rand.Seed(time.Now().UnixNano())
 
 	// for now, let's just assume there's always more than 1 key
 	minimumToDelete := 1
@@ -85,7 +82,6 @@ func DeleteRandomKeys(jsonInput PureJson) (PureJson, string) {
 // this is all incredibly repetitive, so refactoring to be a generic function
 // will be a good learning experience later :tada:
 func GetOneKeyStringValue(jsonInput PureJson) (string, string) {
-	rand.Seed(time.Now().UnixNano())
 
 	keysWithStringValues := []string{"location", "name"}
 
@@ -109,7 +105,6 @@ func GetOneKeyStringValue(jsonInput PureJson) (string, string) {
 }
 
 func GetOneKeyIntValue(jsonInput PureJson) (int, string) {
-	rand.Seed(time.Now().UnixNano())
 
 	keysWithIntValues := []string{"id", "age"}
 
@@ -135,7 +130,6 @@ func GetOneKeyIntValue(jsonInput PureJson) (int, string) {
 }
 
 func KeepOneKey(jsonInput PureJson) (PureJson, string) {
-	rand.Seed(time.Now().UnixNano())
 
 	// for now, let's just assume there's always more than 1 key
 	minimumToKeep := 1
@@ -164,7 +158,6 @@ func KeepOneKey(jsonInput PureJson) (PureJson, string) {
 
 // these are the Simple Purchase Question functions
 func GetAllArrayStringValues(jsonInput PureJsonArrayPurchases) ([]string, string) {
-	rand.Seed(time.Now().UnixNano())
 
 	nestedPurchases := jsonInput["purchases"]
 
@@ -180,7 +173,6 @@ func GetAllArrayStringValues(jsonInput PureJsonArrayPurchases) ([]string, string
 
 // this also feels highly duplicated from the above, and should be generalized
 func GetAllArrayIntValues(jsonInput PureJsonArrayPurchases) ([]int, string) {
-	rand.Seed(time.Now().UnixNano())
 
 	// I feel bad about this, and you should too
 	nestedPurchases := jsonInput["purchases"]
@@ -354,7 +346,6 @@ func GetNumberOfPicks(jsonInput PureJsonArrayLottery) (int, string) {
 // this is doing double duty for both a starting range and ending range rather than two
 // separate functions
 func GetNRangePicks(jsonInput PureJsonArrayLottery) ([]util.FakeLotteryPick, string) {
-	rand.Seed(time.Now().UnixNano())
 	// just hardcode this, since we want at least 2 and not more than 4
 	randomNumberOfPicks := rand.Intn(3) + 1
 	updatedArray := make([]util.FakeLotteryPick, len(jsonInput["lotteryPicks"]))
@@ -391,7 +382,6 @@ func GetNRangePicks(jsonInput PureJsonArrayLottery) ([]util.FakeLotteryPick, str
 
 func PickAWinner(jsonInput PureJsonArrayLottery) (util.FakeLotteryPick, string) {
 	// this is super basic just to practice updating fields in objects
-	rand.Seed(time.Now().UnixNano())
 	randomIndex := rand.Intn(len(jsonInput["lotteryPicks"]))
 
 	var winner util.FakeLotteryPick
@@ -433,7 +423,6 @@ func GetLotteryPickFrequencyDistribution(jsonInput PureJsonArrayLottery) (map[st
 
 // I continue to bow in respect to Senseis Thomas Franklin and Rudi Tooty Fresh and Fruity for their jq skillz
 func GetHighestResultInOneSubject(jsonInput util.ComplexGradesObject) (util.Student, string) {
-	rand.Seed(time.Now().UnixNano())
 
 	subjectIndex := rand.Intn(len(util.PossibleSubjects))
 	selectedSubject := util.PossibleSubjects[subjectIndex]
@@ -470,7 +459,6 @@ func GetHighestResultInOneSubject(jsonInput util.ComplexGradesObject) (util.Stud
 }
 
 func GetHighestScoreForPersonInSubject(jsonInput util.ComplexGradesObject) (int, string) {
-	rand.Seed(time.Now().UnixNano())
 
 	// first we pick a random student
 	randomStudentIndex := rand.Intn(len(jsonInput.Students))
