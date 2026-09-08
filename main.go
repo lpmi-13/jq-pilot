@@ -195,22 +195,22 @@ func main() {
 
 	router := gin.Default()
 
-    // Add gzip as fallback, excluding SSE endpoint
-    router.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{"/sse"})))
+	// Add gzip as fallback, excluding SSE endpoint
+	router.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{"/sse"})))
 
-    config := cors.DefaultConfig()
-    config.AllowOrigins = []string{"http://localhost:3000", "http://localhost:8000"}
-    config.AllowMethods = []string{"GET", "POST", "OPTIONS"}
-    config.AllowHeaders = []string{"Origin", "Content-Type", "Accept"}
-    config.ExposeHeaders = []string{"Content-Length"}
-    config.AllowCredentials = true
-    router.Use(cors.New(config))
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"http://localhost:3000", "http://localhost:8000"}
+	config.AllowMethods = []string{"GET", "POST", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept"}
+	config.ExposeHeaders = []string{"Content-Length"}
+	config.AllowCredentials = true
+	router.Use(cors.New(config))
 
 	if MODE == "prod" {
 		router.Use(static.Serve("/", static.LocalFile("./build", true)))
 	} else {
 		// Add skip endpoint only in development mode
-                router.POST("/skip", handleSkip)
+		router.POST("/skip", handleSkip)
 	}
 
 	router.GET("/sse", handleSSE)
@@ -244,21 +244,21 @@ func main() {
 }
 
 var (
-    clientsMutex sync.RWMutex
-    clients      = make(map[chan struct{}]bool)
+	clientsMutex sync.RWMutex
+	clients      = make(map[chan struct{}]bool)
 )
 
 func registerClient(ch chan struct{}) {
-    clientsMutex.Lock()
-    defer clientsMutex.Unlock()
-    clients[ch] = true
+	clientsMutex.Lock()
+	defer clientsMutex.Unlock()
+	clients[ch] = true
 }
 
 func unregisterClient(ch chan struct{}) {
-    clientsMutex.Lock()
-    defer clientsMutex.Unlock()
-    delete(clients, ch)
-    close(ch)
+	clientsMutex.Lock()
+	defer clientsMutex.Unlock()
+	delete(clients, ch)
+	close(ch)
 }
 
 // SSE connection limiting: /sse holds long-lived streaming connections, and on
@@ -269,134 +269,134 @@ func unregisterClient(ch chan struct{}) {
 const maxConcurrentSSEConnections = 50
 
 var (
-    sseConnMutex sync.Mutex
-    sseConnCount int
+	sseConnMutex sync.Mutex
+	sseConnCount int
 )
 
 // acquireSSESlot reserves a connection slot, returning false if we're at the cap.
 func acquireSSESlot() bool {
-    sseConnMutex.Lock()
-    defer sseConnMutex.Unlock()
-    if sseConnCount >= maxConcurrentSSEConnections {
-        return false
-    }
-    sseConnCount++
-    return true
+	sseConnMutex.Lock()
+	defer sseConnMutex.Unlock()
+	if sseConnCount >= maxConcurrentSSEConnections {
+		return false
+	}
+	sseConnCount++
+	return true
 }
 
 func releaseSSESlot() {
-    sseConnMutex.Lock()
-    defer sseConnMutex.Unlock()
-    sseConnCount--
+	sseConnMutex.Lock()
+	defer sseConnMutex.Unlock()
+	sseConnCount--
 }
 
 func handleSkip(c *gin.Context) {
-    generateNextQuestionAnswer()
-    c.Status(http.StatusOK)
+	generateNextQuestionAnswer()
+	c.Status(http.StatusOK)
 }
 
 func notifyStateChange() {
-    clientsMutex.RLock()
-    defer clientsMutex.RUnlock()
+	clientsMutex.RLock()
+	defer clientsMutex.RUnlock()
 
-    for ch := range clients {
-        select {
-        case ch <- struct{}{}:
-        default:
-            // Skip if channel is blocked
-        }
-    }
+	for ch := range clients {
+		select {
+		case ch <- struct{}{}:
+		default:
+			// Skip if channel is blocked
+		}
+	}
 }
 
 func handleSSE(c *gin.Context) {
-    // Reject the connection if we're already at the concurrent-connection cap.
-    // Each open SSE connection pins billable instance time on Cloud Run, so this
-    // bounds both cost and request-concurrency exhaustion.
-    if !acquireSSESlot() {
-        c.AbortWithStatus(http.StatusTooManyRequests)
-        return
-    }
-    defer releaseSSESlot()
+	// Reject the connection if we're already at the concurrent-connection cap.
+	// Each open SSE connection pins billable instance time on Cloud Run, so this
+	// bounds both cost and request-concurrency exhaustion.
+	if !acquireSSESlot() {
+		c.AbortWithStatus(http.StatusTooManyRequests)
+		return
+	}
+	defer releaseSSESlot()
 
-    // Set required SSE headers.
-    // CORS is deliberately NOT set here: the global cors middleware already emits a
-    // valid, per-origin Access-Control-Allow-Origin (with credentials) for the
-    // allowlisted origins. Emitting "Access-Control-Allow-Origin: *" together with
-    // credentials here produced an invalid combination that browsers reject.
-    c.Header("Content-Type", "text/event-stream")
-    c.Header("Cache-Control", "no-cache")
-    c.Header("Connection", "keep-alive")
-    c.Header("X-Accel-Buffering", "no") // Disable buffering for nginx
+	// Set required SSE headers.
+	// CORS is deliberately NOT set here: the global cors middleware already emits a
+	// valid, per-origin Access-Control-Allow-Origin (with credentials) for the
+	// allowlisted origins. Emitting "Access-Control-Allow-Origin: *" together with
+	// credentials here produced an invalid combination that browsers reject.
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("X-Accel-Buffering", "no") // Disable buffering for nginx
 
-    // Create a context that's cancelled when the client disconnects
-    ctx, cancel := context.WithCancel(c.Request.Context())
-    defer cancel()
+	// Create a context that's cancelled when the client disconnects
+	ctx, cancel := context.WithCancel(c.Request.Context())
+	defer cancel()
 
-    // Create a channel for this client
-    clientChan := make(chan string, 1)
-    defer close(clientChan)
+	// Create a channel for this client
+	clientChan := make(chan string, 1)
+	defer close(clientChan)
 
-    // Create a ticker for keepalive messages so we can run on cloudrun with
+	// Create a ticker for keepalive messages so we can run on cloudrun with
 	// CPU allocated only during request processing
-    keepAliveTicker := time.NewTicker(30 * time.Second)
-    defer keepAliveTicker.Stop()
+	keepAliveTicker := time.NewTicker(30 * time.Second)
+	defer keepAliveTicker.Stop()
 
-    // Send initial state immediately
-    go func() {
-        mixedResponse, err := generateMixedResponse()
-        if err != nil {
-            log.Printf("Error generating initial mixed response: %v", err)
-            return
-        }
+	// Send initial state immediately
+	go func() {
+		mixedResponse, err := generateMixedResponse()
+		if err != nil {
+			log.Printf("Error generating initial mixed response: %v", err)
+			return
+		}
 
-        response, err := json.Marshal(mixedResponse)
-        if err != nil {
-            log.Printf("Error marshalling initial JSON: %v", err)
-            return
-        }
+		response, err := json.Marshal(mixedResponse)
+		if err != nil {
+			log.Printf("Error marshalling initial JSON: %v", err)
+			return
+		}
 
-        select {
-        case clientChan <- string(response):
-        case <-ctx.Done():
-            return
-        }
-    }()
+		select {
+		case clientChan <- string(response):
+		case <-ctx.Done():
+			return
+		}
+	}()
 
-    // Create a channel for state updates
-    stateChan := make(chan struct{}, 1)
-    registerClient(stateChan)
-    defer unregisterClient(stateChan)
+	// Create a channel for state updates
+	stateChan := make(chan struct{}, 1)
+	registerClient(stateChan)
+	defer unregisterClient(stateChan)
 
-    // Start streaming
-    c.Stream(func(w io.Writer) bool {
-        select {
-        case <-ctx.Done():
-            return false
-        case <-keepAliveTicker.C:
-            // Send keepalive comment to prevent connection timeout
-            c.SSEvent("keepalive", time.Now().Unix())
-            return true
-        case <-stateChan:
-            // State has changed, generate and send new response
-            mixedResponse, err := generateMixedResponse()
-            if err != nil {
-                log.Printf("Error generating mixed response: %v", err)
-                return true // Continue streaming despite error
-            }
+	// Start streaming
+	c.Stream(func(w io.Writer) bool {
+		select {
+		case <-ctx.Done():
+			return false
+		case <-keepAliveTicker.C:
+			// Send keepalive comment to prevent connection timeout
+			c.SSEvent("keepalive", time.Now().Unix())
+			return true
+		case <-stateChan:
+			// State has changed, generate and send new response
+			mixedResponse, err := generateMixedResponse()
+			if err != nil {
+				log.Printf("Error generating mixed response: %v", err)
+				return true // Continue streaming despite error
+			}
 
-            response, err := json.Marshal(mixedResponse)
-            if err != nil {
-                log.Printf("Error marshalling JSON: %v", err)
-                return true // Continue streaming despite error
-            }
+			response, err := json.Marshal(mixedResponse)
+			if err != nil {
+				log.Printf("Error marshalling JSON: %v", err)
+				return true // Continue streaming despite error
+			}
 
-            c.SSEvent("message", string(response))
-            return true
-        case msg := <-clientChan:
-            c.SSEvent("message", msg)
-            return true
-        }
-    })
+			c.SSEvent("message", string(response))
+			return true
+		case msg := <-clientChan:
+			c.SSEvent("message", msg)
+			return true
+		}
+	})
 }
 
 func generateMixedResponse() (interface{}, error) {
