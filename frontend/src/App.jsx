@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState } from 'react';
 import { Formatter, FracturedJsonOptions } from 'fracturedjsonjs';
 import './styles/App.scss';
 
-const ENV = process.env.REACT_APP_ENV ? process.env.REACT_APP_ENV : 'dev';
+const ENV = import.meta.env.VITE_ENV ? import.meta.env.VITE_ENV : 'dev';
 
 const currentDomain =
     ENV.toLowerCase() === 'production'

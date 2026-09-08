@@ -1,4 +1,4 @@
-@import './mixins.scss';
+@use './mixins' as *;
 
 .center {
     text-align: center;

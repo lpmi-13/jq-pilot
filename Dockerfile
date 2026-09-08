@@ -12,23 +12,26 @@ COPY transforms /app/transforms
 
 RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o /app/jq-pilot
 
-FROM node:20-alpine AS frontend
+FROM node:22-alpine AS frontend
 
 # pass in --build-arg ENV=local (or any value that's not production) to run this locally.
 ARG ENV=production
 
 WORKDIR /app
 
-COPY ./frontend/package.json /app/package.json
+COPY ./frontend/package.json ./frontend/package-lock.json /app/
 
-RUN npm install --omit=dev
+# Full install (no --omit=dev): the build toolchain (vite) lives in devDependencies.
+RUN npm ci
 
+COPY ./frontend/index.html /app/index.html
+COPY ./frontend/vite.config.js /app/vite.config.js
 COPY ./frontend/public /app/public
 COPY ./frontend/src /app/src
 
-RUN REACT_APP_ENV=$ENV npm run build
+RUN VITE_ENV=$ENV npm run build
 
-FROM node:20-alpine AS final
+FROM node:22-alpine AS final
 
 WORKDIR /app
 
