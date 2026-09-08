@@ -1,5 +1,6 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Formatter, FracturedJsonOptions } from 'fracturedjsonjs';
+import { useMountEffect } from './useMountEffect';
 import './styles/App.scss';
 
 const ENV = import.meta.env.VITE_ENV ? import.meta.env.VITE_ENV : 'dev';
@@ -29,7 +30,7 @@ function App() {
     const [prompt, setPrompt] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
+    useMountEffect(() => {
         const eventSource = new EventSource(`${currentDomain}/sse`);
         eventSource.onmessage = (event: MessageEvent<string>) => {
             try {
@@ -53,7 +54,7 @@ function App() {
         return () => {
             eventSource.close();
         };
-    }, []);
+    });
 
     const handleSkip = async () => {
         try {
