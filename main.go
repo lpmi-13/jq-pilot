@@ -399,7 +399,19 @@ func main() {
 	router.NoRoute(func(ctx *gin.Context) { ctx.JSON(http.StatusNotFound, gin.H{}) })
 
 	port := viper.GetString("PORT")
-	router.Run(":" + port)
+
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: router,
+		// ReadHeaderTimeout guards against Slowloris-style slow-header attacks.
+		ReadHeaderTimeout: 10 * time.Second,
+		// IdleTimeout reaps idle keep-alive connections.
+		IdleTimeout: 120 * time.Second,
+		// ReadTimeout/WriteTimeout are intentionally left unset: /sse streams
+		// long-lived responses and a write deadline would sever those connections.
+	}
+
+	log.Fatal(srv.ListenAndServe())
 }
 
 var (
@@ -418,6 +430,35 @@ func unregisterClient(ch chan struct{}) {
     defer clientsMutex.Unlock()
     delete(clients, ch)
     close(ch)
+}
+
+// SSE connection limiting: /sse holds long-lived streaming connections, and on
+// Cloud Run each open connection is billed as an in-flight request for its whole
+// duration. Capping simultaneous connections stops a flood of open connections
+// from pinning the instance (driving up cost) or exhausting request concurrency.
+// Keep this below containerConcurrency (80) so other routes keep headroom.
+const maxConcurrentSSEConnections = 50
+
+var (
+    sseConnMutex sync.Mutex
+    sseConnCount int
+)
+
+// acquireSSESlot reserves a connection slot, returning false if we're at the cap.
+func acquireSSESlot() bool {
+    sseConnMutex.Lock()
+    defer sseConnMutex.Unlock()
+    if sseConnCount >= maxConcurrentSSEConnections {
+        return false
+    }
+    sseConnCount++
+    return true
+}
+
+func releaseSSESlot() {
+    sseConnMutex.Lock()
+    defer sseConnMutex.Unlock()
+    sseConnCount--
 }
 
 func handleSkip(c *gin.Context) {
@@ -439,6 +480,15 @@ func notifyStateChange() {
 }
 
 func handleSSE(c *gin.Context) {
+    // Reject the connection if we're already at the concurrent-connection cap.
+    // Each open SSE connection pins billable instance time on Cloud Run, so this
+    // bounds both cost and request-concurrency exhaustion.
+    if !acquireSSESlot() {
+        c.AbortWithStatus(http.StatusTooManyRequests)
+        return
+    }
+    defer releaseSSESlot()
+
     // Set required SSE headers
     c.Header("Content-Type", "text/event-stream")
     c.Header("Cache-Control", "no-cache")
@@ -684,11 +734,18 @@ func generateNextQuestionAnswer() {
 	notifyStateChange()
 }
 
+// maxAnswerBodyBytes bounds the size of a POST /answer body so an oversized
+// payload can't exhaust the instance's memory (only 128Mi).
+const maxAnswerBodyBytes = 1 << 20 // 1 MiB
+
 func processAnswer[T any](context *gin.Context, expectedAnswer T) {
+	context.Request.Body = http.MaxBytesReader(context.Writer, context.Request.Body, maxAnswerBodyBytes)
+
 	var actualAnswer T
 	if err := context.BindJSON(&actualAnswer); err != nil {
 		log.Println(err)
 		context.AbortWithStatus(http.StatusBadRequest)
+		return
 	}
 
 	diff := deep.Equal(actualAnswer, expectedAnswer)
