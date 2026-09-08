@@ -99,6 +99,29 @@ var (
 	prompt                          string
 )
 
+// stateMu guards all of the shared game state declared above: the
+// currentQuestionType / currentFunctionType selectors, the prompt, and every
+// question/answer global. This stays a single, world-readable shared game, so
+// the state remains global on purpose; the mutex only makes the concurrent
+// access safe. gin serves each request in its own goroutine, so without this
+// two concurrent POSTs (or an SSE read racing a regeneration) would be a data
+// race on these maps/slices/strings and could crash the process.
+//
+// Writers take the write lock (generateNextQuestionAnswer). Readers take the
+// read lock, either directly or via snapshot below.
+var stateMu sync.RWMutex
+
+// snapshot returns a copy of a shared-state value read under the read lock, so a
+// handler never touches a global concurrently with a writer. Maps and slices are
+// copied by header, which is safe because published state is never mutated in
+// place: generateNextQuestionAnswer only ever reassigns these globals to freshly
+// built values, so a header captured here always points at an immutable snapshot.
+func snapshot[T any](p *T) T {
+	stateMu.RLock()
+	defer stateMu.RUnlock()
+	return *p
+}
+
 func generateLotteryPickQuestionData() transforms.PureJsonArrayLottery {
 	return transforms.PureJsonArrayLottery{"lotteryPicks": util.GenerateLotteryPicks()}
 }
@@ -381,14 +404,6 @@ func main() {
                 router.POST("/skip", handleSkip)
 	}
 
-    router.OPTIONS("/sse", func(c *gin.Context) {
-        c.Header("Access-Control-Allow-Origin", "*")
-        c.Header("Access-Control-Allow-Methods", "GET, OPTIONS")
-        c.Header("Access-Control-Allow-Headers", "Content-Type")
-        c.Header("Access-Control-Max-Age", "86400")
-        c.Status(http.StatusOK)
-    })
-
 	router.GET("/sse", handleSSE)
 
 	router.GET("/question", getQuestion)
@@ -489,13 +504,14 @@ func handleSSE(c *gin.Context) {
     }
     defer releaseSSESlot()
 
-    // Set required SSE headers
+    // Set required SSE headers.
+    // CORS is deliberately NOT set here: the global cors middleware already emits a
+    // valid, per-origin Access-Control-Allow-Origin (with credentials) for the
+    // allowlisted origins. Emitting "Access-Control-Allow-Origin: *" together with
+    // credentials here produced an invalid combination that browsers reject.
     c.Header("Content-Type", "text/event-stream")
     c.Header("Cache-Control", "no-cache")
     c.Header("Connection", "keep-alive")
-    c.Header("Access-Control-Allow-Origin", "*")
-    c.Header("Access-Control-Allow-Headers", "Content-Type")
-    c.Header("Access-Control-Allow-Credentials", "true")
     c.Header("X-Accel-Buffering", "no") // Disable buffering for nginx
 
     // Create a context that's cancelled when the client disconnects
@@ -570,6 +586,13 @@ func handleSSE(c *gin.Context) {
 }
 
 func generateMixedResponse() (interface{}, error) {
+	// Held for the whole assembly so the selectors and the data they point at are
+	// read as one consistent snapshot. The returned value only holds header copies
+	// of the (immutable) published state, so the caller can marshal it after the
+	// lock is released.
+	stateMu.RLock()
+	defer stateMu.RUnlock()
+
 	var mixedResponse interface{}
 	var err error
 
@@ -599,23 +622,35 @@ func generateMixedResponse() (interface{}, error) {
 
 // this is crap and should be more general
 func getQuestion(c *gin.Context) {
+	// Read the selector and its matching data as one consistent snapshot, then
+	// release the lock before serializing/writing to the (possibly slow) client.
+	stateMu.RLock()
+	var data any
 	switch currentQuestionType {
 	case util.SimplePeopleQuestions:
-		c.IndentedJSON(http.StatusOK, personQuestionData)
+		data = personQuestionData
 	case util.SimplePurchaseQuestions:
-		c.IndentedJSON(http.StatusOK, purchaseQuestionData)
+		data = purchaseQuestionData
 	case util.SimpleLotteryQuestions:
-		c.IndentedJSON(http.StatusOK, lotteryQuestionData)
+		data = lotteryQuestionData
 	case util.SimpleGradesQuestions:
-		c.IndentedJSON(http.StatusOK, gradesQuestionData)
+		data = gradesQuestionData
 	case util.SimpleTagsQuestionsArrayToDict:
-		c.IndentedJSON(http.StatusOK, tagsQuestionDataArray)
+		data = tagsQuestionDataArray
 	case util.SimpleTagsQuestionsDictToArray:
-		c.IndentedJSON(http.StatusOK, tagsQuestionDataDict)
+		data = tagsQuestionDataDict
+	}
+	stateMu.RUnlock()
+
+	if data != nil {
+		c.IndentedJSON(http.StatusOK, data)
 	}
 }
 
 func generateNextQuestionAnswer() {
+	stateMu.Lock()
+	defer stateMu.Unlock()
+
 	// we need to know what type of question we want so that we can use that to determine the subset
 	// of function types to use to create the activity
 	currentQuestionType = util.GeneratePossibleValue(util.PossibleQuestionTypes)
@@ -760,62 +795,71 @@ func processAnswer[T any](context *gin.Context, expectedAnswer T) {
 }
 
 func getPrompt(c *gin.Context) {
-	c.IndentedJSON(http.StatusOK, prompt)
+	c.IndentedJSON(http.StatusOK, snapshot(&prompt))
 }
 
 func getAnswer(c *gin.Context) {
-	if currentQuestionType == util.SimplePurchaseQuestions {
+	// Read the two selectors as one consistent snapshot. Each expected answer is
+	// then snapshotted individually (via snapshot below) so we never hold the read
+	// lock while processAnswer reads the request body or calls
+	// generateNextQuestionAnswer (which needs the write lock).
+	stateMu.RLock()
+	questionType := currentQuestionType
+	functionType := currentFunctionType
+	stateMu.RUnlock()
+
+	if questionType == util.SimplePurchaseQuestions {
 		// we keep the current function type in state so we know how to compare the answer
-		if currentFunctionType == jsonToStringArray {
-			processAnswer[[]string](c, purchaseAnswerDataStringArray)
-		} else if currentFunctionType == jsonToIntArray {
-			processAnswer[[]int](c, purchaseAnswerDataIntArray)
-		} else if currentFunctionType == jsonToJson {
-			processAnswer[[]util.FakePurchase](c, purchaseAnswerDataJsonArray)
-		} else if currentFunctionType == jsonToElaboratedJson {
-			processAnswer[[]util.FakePurchaseVerified](c, purchaseAnswerDataJsonVerified)
-		} else if currentFunctionType == jsonToLowercaseJson {
-			processAnswer[[]map[string]any](c, purchaseAnswerDataJsonLowercase)
-		} else if currentFunctionType == jsonToGroupedJson {
-			processAnswer[util.FakePurchaseGrouped](c, purchaseAnswerDataGrouped)
+		if functionType == jsonToStringArray {
+			processAnswer[[]string](c, snapshot(&purchaseAnswerDataStringArray))
+		} else if functionType == jsonToIntArray {
+			processAnswer[[]int](c, snapshot(&purchaseAnswerDataIntArray))
+		} else if functionType == jsonToJson {
+			processAnswer[[]util.FakePurchase](c, snapshot(&purchaseAnswerDataJsonArray))
+		} else if functionType == jsonToElaboratedJson {
+			processAnswer[[]util.FakePurchaseVerified](c, snapshot(&purchaseAnswerDataJsonVerified))
+		} else if functionType == jsonToLowercaseJson {
+			processAnswer[[]map[string]any](c, snapshot(&purchaseAnswerDataJsonLowercase))
+		} else if functionType == jsonToGroupedJson {
+			processAnswer[util.FakePurchaseGrouped](c, snapshot(&purchaseAnswerDataGrouped))
 		}
-	} else if currentQuestionType == util.SimplePeopleQuestions {
-		if currentFunctionType == jsonToString {
-			processAnswer[string](c, personAnswerDataString)
-		} else if currentFunctionType == jsonToInt {
-			processAnswer[int](c, personAnswerDataInt)
-		} else if currentFunctionType == jsonToJson {
-			processAnswer[transforms.PureJson](c, personAnswerDataJson)
+	} else if questionType == util.SimplePeopleQuestions {
+		if functionType == jsonToString {
+			processAnswer[string](c, snapshot(&personAnswerDataString))
+		} else if functionType == jsonToInt {
+			processAnswer[int](c, snapshot(&personAnswerDataInt))
+		} else if functionType == jsonToJson {
+			processAnswer[transforms.PureJson](c, snapshot(&personAnswerDataJson))
 		}
-	} else if currentQuestionType == util.SimpleLotteryQuestions {
-		if currentFunctionType == jsonToJson {
-			processAnswer[util.FakeLotteryPick](c, lotteryAnswerDataJson)
-		} else if currentFunctionType == jsonToSmallerJson {
-			processAnswer[[]util.FakeLotteryPick](c, lotteryAnswerDataSmallerJson)
-		} else if currentFunctionType == jsonToDict {
-			processAnswer[map[string]int](c, lotteryAnswerFreqDist)
-		} else if currentFunctionType == jsonToIntArray {
-			processAnswer[[]int](c, lotteryAnswerDataIntArray)
-		} else if currentFunctionType == jsonToInt {
-			processAnswer[int](c, lotteryAnswerDataInt)
+	} else if questionType == util.SimpleLotteryQuestions {
+		if functionType == jsonToJson {
+			processAnswer[util.FakeLotteryPick](c, snapshot(&lotteryAnswerDataJson))
+		} else if functionType == jsonToSmallerJson {
+			processAnswer[[]util.FakeLotteryPick](c, snapshot(&lotteryAnswerDataSmallerJson))
+		} else if functionType == jsonToDict {
+			processAnswer[map[string]int](c, snapshot(&lotteryAnswerFreqDist))
+		} else if functionType == jsonToIntArray {
+			processAnswer[[]int](c, snapshot(&lotteryAnswerDataIntArray))
+		} else if functionType == jsonToInt {
+			processAnswer[int](c, snapshot(&lotteryAnswerDataInt))
 		}
-	} else if currentQuestionType == util.SimpleGradesQuestions {
-		if currentFunctionType == jsonToInt {
-			processAnswer[int](c, gradesAnswerDataInt)
-		} else if currentFunctionType == jsonToJson {
-			processAnswer[[]util.SimplerStudent](c, gradesAnswerDataJson)
-		} else if currentFunctionType == jsonToRidicJson {
-			processAnswer[util.Student](c, gradesAnswerDataRidicJson)
+	} else if questionType == util.SimpleGradesQuestions {
+		if functionType == jsonToInt {
+			processAnswer[int](c, snapshot(&gradesAnswerDataInt))
+		} else if functionType == jsonToJson {
+			processAnswer[[]util.SimplerStudent](c, snapshot(&gradesAnswerDataJson))
+		} else if functionType == jsonToRidicJson {
+			processAnswer[util.Student](c, snapshot(&gradesAnswerDataRidicJson))
 		}
-	} else if currentQuestionType == util.SimpleTagsQuestionsArrayToDict {
-		if currentFunctionType == jsonToDict {
-			processAnswer[map[string]string](c, tagsAnswerDictData)
+	} else if questionType == util.SimpleTagsQuestionsArrayToDict {
+		if functionType == jsonToDict {
+			processAnswer[map[string]string](c, snapshot(&tagsAnswerDictData))
 		} else {
 			log.Fatal("didn't match a function type")
 		}
-	} else if currentQuestionType == util.SimpleTagsQuestionsDictToArray {
-		if currentFunctionType == jsonToArray {
-			processAnswer[[]util.Tag](c, tagsAnswerArrayData)
+	} else if questionType == util.SimpleTagsQuestionsDictToArray {
+		if functionType == jsonToArray {
+			processAnswer[[]util.Tag](c, snapshot(&tagsAnswerArrayData))
 		} else {
 			log.Fatal("didn't match a function type here either")
 		}
