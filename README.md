@@ -2,7 +2,7 @@
 
 Inspired by the `jq` wizardry of @csibar and @thomas-franklin, I decided I needed a micromaterial to up my jq game, so I made this to generate learning exercises for myself.
 
-live at https://jkew.party (and also https://jayq.party, since I couldn't decide which name I like more).
+> This project is now defunct, since nobody really needs to practice jq syntax anymore.
 
 ## The exercises
 
